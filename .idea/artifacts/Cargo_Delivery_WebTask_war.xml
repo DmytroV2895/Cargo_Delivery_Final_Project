@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="Cargo_Delivery_WebTask:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <properties id="maven-jee-properties">
+      <options>
+        <module>Cargo_Delivery_WebTask</module>
+        <packaging>war</packaging>
+      </options>
+    </properties>
+    <root id="archive" name="Cargo_Delivery-1.0.war">
+      <element id="artifact" artifact-name="Cargo_Delivery_WebTask:war exploded" />
+    </root>
+  </artifact>
+</component>

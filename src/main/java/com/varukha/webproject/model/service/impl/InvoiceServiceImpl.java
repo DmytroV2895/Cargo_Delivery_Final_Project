@@ -1,33 +1,34 @@
 package com.varukha.webproject.model.service.impl;
 
-import com.varukha.webproject.entity.*;
-import com.varukha.webproject.entity.Invoice.OrderStatus;
+import com.varukha.webproject.model.entity.*;
+import com.varukha.webproject.model.entity.Invoice.OrderStatus;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.dao.InvoiceDAO;
 import com.varukha.webproject.model.service.InvoiceService;
-import com.varukha.webproject.model.service.validation.DataValidator;
-import com.varukha.webproject.util.Calculator;
+import com.varukha.webproject.util.validation.DataValidator;
+import com.varukha.webproject.util.calculator.impl.PriceCalculatorByOrderType;
+import com.varukha.webproject.util.calculator.impl.TotalDeliveryPriceCalculator;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import static com.varukha.webproject.command.ParameterAndAttribute.*;
 
 
 /**
- * Class Invoice Service
+ * Class InvoiceServiceImpl implements methods for
+ * interacting between View layer and the MySQL Data Access layer
+ *
  * @author Dmytro Varukha
+ * @version 1.0
  */
-
 public class InvoiceServiceImpl implements InvoiceService {
 
     private static final Logger logger = LogManager.getLogger();
@@ -38,28 +39,31 @@ public class InvoiceServiceImpl implements InvoiceService {
         this.invoiceDAO = invoiceDAO;
     }
 
+    /**
+     * Method addInvoice is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to add new invoice to database.
+     *
+     * @param invoiceData contain a set of data from user request that will be process in data access layer.
+     * @return boolean result of operation. Return true if new invoice data was set successfully and false if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public boolean addInvoice(Map<String, String> invoiceData) throws ServiceException, IncorrectInputException {
         logger.log(Level.DEBUG, "Save invoice to database. Invoice data" + invoiceData);
         boolean isAdded;
         if (isInvoiceDataValid(invoiceData)) {
 
-            User userId = createUser(invoiceData.get(USER_ID));
-            Order orderId = createOrder(invoiceData.get(ID_ORDER));
-            Delivery deliveryId = createDelivery(invoiceData.get(DELIVERY_ID));
-            AddressFirst addressFirst = createFirstAddress(invoiceData.get(FIRST_ADDRESS_ID));
-            AddressSecond addressSecond = createSecondAddress(invoiceData.get(SECOND_ADDRESS_ID));
-
             Invoice invoice = new Invoice.Builder()
-                    .setUser(userId)
-                    .setOrder(orderId)
-                    .setDelivery(deliveryId)
+                    .setUser(createUser(invoiceData.get(USER_ID)))
+                    .setOrder(createOrder(invoiceData.get(ID_ORDER)))
+                    .setDelivery(createDelivery(invoiceData.get(DELIVERY_ID)))
                     .setDeliveryPrice(calculateDeliveryPrice(invoiceData))
                     .setTotalPrice(calculateTotalPrice(invoiceData))
                     .setDeliveryPaymentStatus(false)
                     .setOrderStatus(OrderStatus.NOT_PROCESSED)
-                    .setFirstAddress(addressFirst)
-                    .setSecondAddress(addressSecond)
+                    .setFirstAddress(createFirstAddress(invoiceData.get(FIRST_ADDRESS_ID)))
+                    .setSecondAddress(createSecondAddress(invoiceData.get(SECOND_ADDRESS_ID)))
                     .build();
             try {
                 isAdded = invoiceDAO.addInvoice(invoice);
@@ -74,87 +78,49 @@ public class InvoiceServiceImpl implements InvoiceService {
         return isAdded;
     }
 
+    /**
+     * Method updateInvoice is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update invoice data.
+     *
+     * @param data contain a set of data to update from user request that will be process in data access layer.
+     * @return boolean result of operation. Return true if new invoice data was set successfully and false if not.
+     * @throws ServiceException        is wrapper for DAOException that throws exception during the runtime because of
+     *                                 data validation fail or others mistakes.
+     * @throws IncorrectInputException is an exception that throws during the runtime because of incorrect data input.
+     */
     @Override
-    public boolean updateInvoice(Map<String, String> invoiceData) throws ServiceException, IncorrectInputException {
-        logger.log(Level.DEBUG, "Update invoice in database. Invoice invoiceData" + invoiceData);
+    public boolean updateInvoice(Map<String, String> data) throws ServiceException, IncorrectInputException {
+        logger.log(Level.DEBUG, "Update invoice in database. Invoice data" + data);
         boolean isChanged = false;
-        if (isInvoiceDataValid(invoiceData)) {
+        if (isInvoiceDataValid(data)) {
             Invoice invoice = new Invoice.Builder()
-                    .setDeliveryPrice(calculateDeliveryPrice(invoiceData))
-                    .setTotalPrice(calculateTotalPrice(invoiceData))
+                    .setInvoiceId(Long.parseLong(data.get(ID_INVOICE)))
+                    .setDeliveryPrice(calculateDeliveryPrice(data))
+                    .setTotalPrice(calculateTotalPrice(data))
                     .build();
             try {
                 isChanged = invoiceDAO.updateInvoiceData(invoice);
-                logger.log(Level.DEBUG, "Updated invoice invoiceData" + invoiceData);
+                logger.log(Level.DEBUG, "Updated invoice data" + data);
             } catch (DAOException | SQLException e) {
-                logger.log(Level.ERROR, "DAO exception in updateInvoiceData method: " + e);
+                logger.log(Level.ERROR, "DAO exception in updateInvoice method: " + e);
                 throw new ServiceException(e);
             }
         } else {
-            logger.log(Level.DEBUG, "Incorrect data input" + invoiceData);
-            throw new IncorrectInputException("Incorrect data input" + invoiceData);
+            logger.log(Level.DEBUG, "Incorrect data input" + data);
+            throw new IncorrectInputException("Incorrect data input" + data);
         }
         return isChanged;
     }
 
-
-//    @Override
-//    public Optional<Invoice> getInvoiceByRecipientPhone(String recipientPhone) throws ServiceException {
-//        logger.log(Level.DEBUG, "Get invoice by invoiceId:" + recipientPhone);
-//        Optional<Invoice> optionalInvoice;
-//        try {
-//            if (recipientPhone == null) {
-//                optionalInvoice = Optional.empty();
-//                throw new ServiceException("No invoices was found by recipient phone " + recipientPhone);
-//            } else {
-//                optionalInvoice = invoiceDAO.findInvoiceByRecipientPhone(recipientPhone);
-//            }
-//        } catch (DAOException e) {
-//            logger.log(Level.ERROR, "DAO exception in findInvoiceByRecipientPhone method " + e);
-//            throw new ServiceException(e);
-//        }
-//        return optionalInvoice;
-//    }
-
-
-    @Override
-    public boolean updateDeliveryPaymentStatusByInvoiceId(long invoiceId) throws ServiceException {
-        logger.log(Level.DEBUG, "Update delivery payment status by invoiceId: " + invoiceId);
-        boolean isUpdated;
-        try {
-            isUpdated = invoiceDAO.updateDeliveryPaymentStatusByInvoiceId(invoiceId);
-        } catch (DAOException e) {
-            logger.log(Level.ERROR,
-                    "DAO exception in method updateDeliveryPaymentStatusByInvoiceId, when we try update payment status by invoiceId :" + invoiceId + ". " + e);
-            throw new ServiceException(e);
-        }
-        return isUpdated;
-    }
-
-
-    @Override
-    public boolean updateInvoiceDeliveryDateAndOrderStatus(Map<String, String> invoiceData) throws ServiceException {
-        logger.log(Level.INFO, "Update invoice delivery invoiceData and order status by manager " + invoiceData);
-        boolean isUpdated = false;
-        try {
-            Date deliveryDate = Date.valueOf(invoiceData.get(DELIVERY_DATE));
-            OrderStatus orderStatus = OrderStatus.valueOf(invoiceData.get(ORDER_STATUS));
-
-            Invoice invoice = new Invoice.Builder()
-                    .setInvoiceId(Long.parseLong(invoiceData.get(ID_INVOICE)))
-                    .setDeliveryDate(deliveryDate)
-                    .setOrderStatus(orderStatus)
-                    .build();
-
-            isUpdated = invoiceDAO.changeInvoiceDeliveryDateAndOrderStatus(invoice);
-        } catch (DAOException e) {
-            logger.log(Level.ERROR,
-                    "DAO exception in updateInvoiceDeliveryDateAndOrderStatus method: " + invoiceData + ". " + e);
-            throw new ServiceException(e);
-        }
-        return isUpdated;
-    }
-
+    /**
+     * Method getInvoiceById is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get invoice data by invoice id.
+     *
+     * @param invoiceId invoice id in which the search is performed.
+     * @return optional result of operation. Return optional of invoice if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public Optional<Invoice> getInvoiceById(long invoiceId) throws ServiceException {
         logger.log(Level.DEBUG, "Get invoice by Id:" + invoiceId);
@@ -169,7 +135,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoice;
     }
 
-
+    /**
+     * Method getInvoiceByDeliveryDate is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get all invoices by delivery date.
+     *
+     * @param deliveryDate date in which the search is performed.
+     * @return optional result of operation. Return optional of invoices if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public Optional<Invoice> getInvoiceByDeliveryDate(String deliveryDate) throws ServiceException {
         logger.log(Level.DEBUG, "Get invoice by deliveryDate:" + deliveryDate);
@@ -184,60 +158,152 @@ public class InvoiceServiceImpl implements InvoiceService {
         return optionalInvoice;
     }
 
+    /**
+     * Method getInvoiceByDestinationCity is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get all invoice by sender city and recipient city.
+     *
+     * @param firstCity  sender city in which the search is performed.
+     * @param secondCity receiver city in which the search is performed.
+     * @return list of invoices by searching first city and second city.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public Optional<Invoice> getInvoiceByDestinationCity(String firstCity, String secondCity) throws ServiceException {
+    public List<Invoice> getInvoiceByDestinationCity(String firstCity, String secondCity) throws ServiceException {
         logger.log(Level.INFO, "Get invoice by destination. First city: " + firstCity + " Second city: " + secondCity);
-        Optional<Invoice> invoiceOptional;
+        List<Invoice> invoiceList;
         try {
-            invoiceOptional = invoiceDAO.findInvoiceByDestinationCity(firstCity, secondCity);
-            logger.log(Level.DEBUG, "Invoice was found. " + invoiceOptional + " First city: " + firstCity + " Second city: " + secondCity);
+            invoiceList = invoiceDAO.findInvoiceByDestinationCity(firstCity, secondCity);
+                logger.log(Level.DEBUG, "Invoice was found. " + invoiceList + " First city: " + firstCity + " Second city: " + secondCity);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in getInvoiceByDestinationDate method.  First city: " + firstCity + " Second city: " + secondCity);
+            logger.log(Level.ERROR, "DAO exception in getInvoiceByDestinationCity method.  First city: " + firstCity + " Second city: " + secondCity);
             throw new ServiceException(e);
         }
-        return invoiceOptional;
+        return invoiceList;
     }
 
+    /**
+     * Method updateDeliveryPaymentStatusByInvoiceId is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update delivery payment status by invoice id.
+     *
+     * @param invoiceId invoice id in which update is performed.
+     * @return boolean result of operation of updating delivery payment status.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public int getNumberOfPages() throws ServiceException {
-        logger.log(Level.DEBUG, "Get number of pages:");
-        int numberOfPages;
-        int numberOfInvoices;
+    public boolean updateDeliveryPaymentStatusByInvoiceId(long invoiceId) throws ServiceException {
+        logger.log(Level.DEBUG, "Update delivery payment status by invoiceId: " + invoiceId);
+        boolean isUpdated;
         try {
-            numberOfInvoices = invoiceDAO.findNumberOfRowsInInvoiceTable();
-            if (numberOfInvoices > numberOfInvoicesOnPage) {
-                numberOfPages = (int) Math.ceil((double) numberOfInvoices / numberOfInvoicesOnPage);
-            } else {
-                numberOfPages = 1;
-            }
+            isUpdated = invoiceDAO.updateDeliveryPaymentStatusByInvoiceId(invoiceId);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in findNumberOfRowsInInvoiceTable method " + e);
+            logger.log(Level.ERROR,
+                    "DAO exception in method updateDeliveryPaymentStatusByInvoiceId, when we try update payment status by invoiceId :" + invoiceId + ". " + e);
             throw new ServiceException(e);
         }
-        return numberOfPages;
+        return isUpdated;
     }
 
+    /**
+     * Method updateInvoiceDeliveryDateAndOrderStatus is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update delivery date and order status.
+     *
+     * @param invoiceData contain an information about delivery date and order status that used to updating.
+     * @return boolean result of operation of updating delivery date and order status.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public int getNumberOfRowsInInvoiceTableByUserId(long userId) throws ServiceException {
+    public boolean updateInvoiceDeliveryDateAndOrderStatus(Map<String, String> invoiceData) throws ServiceException {
+        logger.log(Level.INFO, "Update invoice delivery invoiceData and order status by manager " + invoiceData);
+        boolean isUpdated = false;
+        try {
+            Date deliveryDate = Date.valueOf(invoiceData.get(DELIVERY_DATE));
+            OrderStatus orderStatus = OrderStatus.valueOf(invoiceData.get(ORDER_STATUS));
+
+            Invoice invoice = new Invoice.Builder()
+                    .setInvoiceId(Long.parseLong(invoiceData.get(ID_INVOICE)))
+                    .setDeliveryDate(deliveryDate)
+                    .setOrderStatus(orderStatus)
+                    .build();
+
+            isUpdated = invoiceDAO.updateInvoiceDeliveryDateAndOrderStatus(invoice);
+        } catch (DAOException e) {
+            logger.log(Level.ERROR,
+                    "DAO exception in updateInvoiceDeliveryDateAndOrderStatus method: " + invoiceData + ". " + e);
+            throw new ServiceException(e);
+        }
+        return isUpdated;
+    }
+
+    /**
+     * Method getNumberOfRecordsInInvoiceTableByUserId is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get number of records in invoice table by user id.
+     *
+     * @param userId user id in which the search is performed.
+     * @return number of records in invoice table by user id.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
+    @Override
+    public int getNumberOfRecordsInInvoiceTableByUserId(long userId) throws ServiceException {
         logger.log(Level.DEBUG, "Get number of pages by userId:");
         int numberOfPages;
         int numberOfInvoices;
         try {
-            numberOfInvoices = invoiceDAO.findNumberOfRowsInInvoiceTableByUserId(userId);
+            numberOfInvoices = invoiceDAO.findNumberOfRecordsInInvoiceTableByUserId(userId);
             if (numberOfInvoices > numberOfInvoicesOnPage) {
                 numberOfPages = (int) Math.ceil((double) numberOfInvoices / numberOfInvoicesOnPage);
             } else {
                 numberOfPages = 1;
             }
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in findNumberOfRowsInInvoiceTable method " + e);
+            logger.log(Level.ERROR, "DAO exception in getNumberOfRecordsInInvoiceTableByUserId method " + e);
             throw new ServiceException(e);
         }
         return numberOfPages;
     }
 
+    /**
+     * Method getNumberOfRecordsOfAllInvoices is an intermediate service method for communication between
+     * the user view layer and the database and used to get number of all records in invoice table for manager.
+     *
+     * @return number of all records in invoice table.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public List<Invoice> getInvoicesFromRow(int pageNumber) throws ServiceException {
+    public int getNumberOfRecordsOfAllInvoices() throws ServiceException {
+        logger.log(Level.DEBUG, "Get number of pages:");
+        int numberOfPages;
+        int numberOfInvoices;
+        try {
+            numberOfInvoices = invoiceDAO.findNumberOfRecordsInInvoiceTable();
+            if (numberOfInvoices > numberOfInvoicesOnPage) {
+                numberOfPages = (int) Math.ceil((double) numberOfInvoices / numberOfInvoicesOnPage);
+            } else {
+                numberOfPages = 1;
+            }
+        } catch (DAOException e) {
+            logger.log(Level.ERROR, "DAO exception in getNumberOfRecordsOfAllInvoices method " + e);
+            throw new ServiceException(e);
+        }
+        return numberOfPages;
+    }
+
+    /**
+     * Method getInvoicesFromPagePagination is an intermediate service method for communication between
+     * the user view layer and the database and used get to definite records from invoice table
+     * and display of data after switching to a new page.
+     *
+     * @param pageNumber page number with displayed data.
+     * @return definite data from invoice table for specified page.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
+    @Override
+    public List<Invoice> getInvoicesFromPagePagination(int pageNumber) throws ServiceException {
         logger.log(Level.DEBUG, "Get invoices from row of invoice table. Page number: " + pageNumber);
         List<Invoice> invoices;
         int invoiceFromRow;
@@ -247,14 +313,24 @@ public class InvoiceServiceImpl implements InvoiceService {
             invoiceFromRow = 0;
         }
         try {
-            invoices = invoiceDAO.findAllInvoicesFromRow(invoiceFromRow, numberOfInvoicesOnPage);
+            invoices = invoiceDAO.findAllInvoicesByDeliveryDate(invoiceFromRow, numberOfInvoicesOnPage);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in findAllInvoicesFromRow method " + e);
+            logger.log(Level.ERROR, "DAO exception in getInvoicesFromPagePagination method " + e);
             throw new ServiceException(e);
         }
         return invoices;
     }
 
+    /**
+     * Method getAllOrdersInfoFromInvoiceByUserId is an intermediate service method for communication between
+     * the user view layer and the database and used to get all orders information from invoice by user id.
+     *
+     * @param userId     user id in which the search is performed.
+     * @param pageNumber page number with displayed data.
+     * @return list of all orders information from invoice by user id.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public List<Invoice> getAllOrdersInfoFromInvoiceByUserId(long userId, int pageNumber) throws ServiceException {
         logger.log(Level.DEBUG, "Get all order info from invoice by userId:" + userId);
@@ -263,45 +339,73 @@ public class InvoiceServiceImpl implements InvoiceService {
         try {
             invoiceList = invoiceDAO.findAllOrdersInfoFromInvoiceByUserId(userId, numberOfInvoicesOnPage, invoiceFromRow);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in getAllOrdersInfoFromInvoiceByUserIdFromRow method " + e);
+            logger.log(Level.ERROR, "DAO exception in getAllOrdersInfoFromInvoiceByUserId method " + e);
             throw new ServiceException(e);
         }
         return invoiceList;
     }
 
+    /**
+     * Method getAllFilteredOrdersInfoFromInvoiceByDeliveryCity is an intermediate service method for communication between
+     * the user view layer and the database and used to get orders information from invoice that was filtered by delivery city.
+     *
+     * @param userId       user id in which the search is performed.
+     * @param deliveryCity delivery city in which the search is performed.
+     * @param pageNumber   page number with displayed data.
+     * @return list of orders information from invoice that was filtered by delivery city.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public List<Invoice> getAllSortedOrdersInfoFromInvoiceByDeliveryAddress(long userId, String deliveryCity, int pageNumber) throws ServiceException {
-        logger.log(Level.DEBUG, "Get all sorted order info from invoice by first address:" + userId);
+    public List<Invoice> getAllFilteredOrdersInfoFromInvoiceByDeliveryCity(long userId, String deliveryCity, int pageNumber) throws ServiceException {
+        logger.log(Level.DEBUG, "Get all sorted order info from invoice by delivery city:" + userId);
         List<Invoice> invoiceList;
         int invoiceFromRow = getInvoicePagesFromRow(pageNumber);
         try {
-            invoiceList = invoiceDAO.findAllOrdersInfoFromInvoiceByDeliveryAddress(userId, deliveryCity, numberOfInvoicesOnPage, invoiceFromRow);
+            invoiceList = invoiceDAO.findAllOrdersInfoFromInvoiceByDeliveryCity(userId, deliveryCity, numberOfInvoicesOnPage, invoiceFromRow);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in findAllOrdersInfoFromInvoiceByFirstAddressFromRow method " + e);
+            logger.log(Level.ERROR, "DAO exception in getAllFilteredOrdersInfoFromInvoiceByDeliveryCity method " + e);
             throw new ServiceException(e);
         }
         return invoiceList;
     }
 
+    /**
+     * Method getNumberOfRecordsInInvoiceTableByDeliveryCityPagination is an intermediate service method for communication between
+     * the user view layer and the database and used to get number of records in invoice table that was filtered by delivery city
+     * and display of data after switching to a new page.
+     *
+     * @param userId       user id in which the search is performed.
+     * @param deliveryCity delivery city in which the search is performed.
+     * @return number of all records in invoice table after filtering.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public int getNumberOfRowsInInvoiceTableByDeliveryAddress(long userId, String deliveryCity) throws ServiceException {
-        logger.log(Level.DEBUG, "Get number of pages by delivery address:");
+    public int getNumberOfRecordsInInvoiceTableByDeliveryCityPagination(long userId, String deliveryCity) throws ServiceException {
+        logger.log(Level.DEBUG, "Get number of pages by delivery city:");
         int numberOfPages;
         int numberOfOrders;
         try {
-            numberOfOrders = invoiceDAO.findNumberOfRowsInInvoiceTableByDeliveryAddress(userId, deliveryCity);
+            numberOfOrders = invoiceDAO.findNumberOfRecordsInInvoiceTableByDeliveryCity(userId, deliveryCity);
             if (numberOfOrders > numberOfInvoicesOnPage) {
                 numberOfPages = (int) Math.ceil((double) numberOfOrders / numberOfInvoicesOnPage);
             } else {
                 numberOfPages = 1;
             }
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in getNumberOfRowsInInvoiceTableByDeliveryAddress method " + e);
+            logger.log(Level.ERROR, "DAO exception in getNumberOfRecordsInInvoiceTableByDeliveryCityPagination method " + e);
             throw new ServiceException(e);
         }
         return numberOfPages;
     }
 
+    /**
+     * Method getInvoicePagesFromRow used to calculate total number of pages.
+     *
+     * @param pageNumber number of pages.
+     * @return total number of pages on user information page.
+     */
     private int getInvoicePagesFromRow(int pageNumber) {
         int invoiceFromRow;
         if (pageNumber > 1) {
@@ -312,31 +416,11 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceFromRow;
     }
 
-
-//    @Override
-//    public Optional<Invoice> getInvoiceByUserPhone(String userPhone) throws ServiceException {
-//        logger.log(Level.DEBUG, "Getting invoice by userPhone:" + userPhone);
-//        Optional<Invoice> optionalInvoice;
-//        try {
-//            if (userPhone == null) {
-//                optionalInvoice = Optional.empty();
-//                throw new ServiceException("No invoices was found by userPhone " + userPhone);
-//            } else {
-//                optionalInvoice = invoiceDAO.findInvoiceByUserPhone(userPhone);
-//            }
-//        } catch (DaoException e) {
-//            logger.log(Level.ERROR, "DAO exception in getInvoiceByUserPhone method " + e);
-//            throw new ServiceException(e);
-//        }
-//        return optionalInvoice;
-//    }
-//
-//
-
     /**
-     * Calculation order volume
-     * @param calculationData data from order creation page
-     * @return order volume
+     * Method calculateDeliveryPrice used to calculate order volume.
+     *
+     * @param calculationData data from order creation page.
+     * @return order volume value.
      */
     static BigDecimal calculateDeliveryPrice(Map<String, String> calculationData) throws IncorrectInputException {
         String orderType = calculationData.get(ORDER_TYPE);
@@ -344,21 +428,26 @@ public class InvoiceServiceImpl implements InvoiceService {
         String orderLength = calculationData.get(ORDER_LENGTH);
         String orderHeight = calculationData.get(ORDER_HEIGHT);
         String orderWidth = calculationData.get(ORDER_WIDTH);
-        String deliveryDistance = calculationData.get(DELIVERY_DISTANCE);
+        String firstCity = calculationData.get(FIRST_CITY);
+        String secondCity = calculationData.get(SECOND_CITY);
+        String deliveryType = calculationData.get(DELIVERY_TYPE);
 
-        return Calculator.calculateDeliveryPrice(orderType,
+        return PriceCalculatorByOrderType.calculateDeliveryPrice(
+                orderType,
                 orderWeight,
                 orderLength,
                 orderHeight,
                 orderWidth,
-                deliveryDistance);
+                firstCity,
+                secondCity,
+                deliveryType);
     }
 
-
     /**
-     * Calculation order volume
+     * Method calculateTotalPrice used to calculate total price of delivery service.
+     *
      * @param calculationData data from order creation page
-     * @return order volume
+     * @return order volume value.
      */
     static BigDecimal calculateTotalPrice(Map<String, String> calculationData) throws IncorrectInputException {
         String orderType = calculationData.get(ORDER_TYPE);
@@ -367,21 +456,27 @@ public class InvoiceServiceImpl implements InvoiceService {
         String orderLength = calculationData.get(ORDER_LENGTH);
         String orderHeight = calculationData.get(ORDER_HEIGHT);
         String orderWidth = calculationData.get(ORDER_WIDTH);
-        String deliveryDistance = calculationData.get(DELIVERY_DISTANCE);
+        String firstCity = calculationData.get(FIRST_CITY);
+        String secondCity = calculationData.get(SECOND_CITY);
+        String deliveryType = calculationData.get(DELIVERY_TYPE);
 
-        return Calculator.calculateTotalServiceDeliveryPrice(orderType,
+        return TotalDeliveryPriceCalculator.calculateTotalPriceOfDeliveryService(
+                orderType,
                 orderPrice,
                 orderWeight,
                 orderLength,
                 orderHeight,
                 orderWidth,
-                deliveryDistance);
+                firstCity,
+                secondCity,
+                deliveryType);
     }
 
     /**
-     * Validation input invoiceData to invoice
-     * @param invoiceData data for validation
-     * @return tru if data valid and false otherwise
+     * Method isInvoiceDataValid used to validation input data
+     *
+     * @param invoiceData data for validation from request
+     * @return true if data valid and false otherwise
      */
     private boolean isInvoiceDataValid(Map<String, String> invoiceData) {
         boolean isValid = false;
@@ -404,14 +499,14 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (DataValidator.isAllNumbersValid(invoiceData.get(DELIVERY_DISTANCE))) {
             isValid = true;
         }
-
         return isValid;
     }
 
-
     /**
-     * @param id
-     * @return new User, that has only id
+     * Method createUser used to set user id.
+     *
+     * @param id user id that will be set.
+     * @return existed user, that has only id.
      */
     private User createUser(String id) {
         long userId = Long.parseLong(id);
@@ -420,10 +515,11 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .build();
     }
 
-
     /**
-     * @param id
-     * @return new Order, that has only id
+     * Method createOrder used to set order id.
+     *
+     * @param id order id that will be set.
+     * @return existed order, that has only id.
      */
     private Order createOrder(String id) {
         long orderId = Long.parseLong(id);
@@ -433,78 +529,41 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     /**
-     * @param id
-     * @return new Order, that has only id
+     * Method createDelivery used to set delivery id.
+     *
+     * @param id delivery id that will be set.
+     * @return existed delivery, that has only id.
      */
     private Delivery createDelivery(String id) {
         long deliveryId = Long.parseLong(id);
-       return new Delivery.Builder()
+        return new Delivery.Builder()
                 .setDeliveryId(deliveryId)
                 .build();
     }
 
     /**
-     * @param id
-     * @return new first address, that has only id
+     * Method createFirstAddress used to set first address id.
+     *
+     * @param id first address id that will be set.
+     * @return existed first address, that has only id.
      */
     private AddressFirst createFirstAddress(String id) {
         long firstAddressId = Long.parseLong(id);
-       return new AddressFirst.Builder()
+        return new AddressFirst.Builder()
                 .setFirstAddressId(firstAddressId)
                 .build();
     }
 
     /**
-     * @param id
-     * @return new second address, that has only id
+     * Method createSecondAddress used to set second address id.
+     *
+     * @param id second address id that will be set.
+     * @return existed second address, that has only id.
      */
     private AddressSecond createSecondAddress(String id) {
         long secondAddressId = Long.parseLong(id);
         return new AddressSecond.Builder()
                 .setSecondAddressId(secondAddressId)
                 .build();
-    }
-
-
-    /**
-     * Calculation order volume
-     * @param calculationData from order creation page
-     * @return order volume
-     */
-    private double calculateOrderVolume (Map <String, String> calculationData) throws IncorrectInputException {
-        String orderLength = calculationData.get(ORDER_LENGTH);
-        String orderHeight = calculationData.get(ORDER_HEIGHT);
-        String orderWidth = calculationData.get(ORDER_WIDTH);
-
-        double orderLengthToDouble = Double.parseDouble(orderLength);
-        double orderHeightToDouble = Double.parseDouble(orderHeight);
-        double orderWidthToDouble = Double.parseDouble(orderWidth);
-
-        return Calculator.calculateOrderVolume(orderLengthToDouble,
-                orderHeightToDouble,
-                orderWidthToDouble);
-
-    }
-
-    /**
-     * Calculation order volume weight
-     * @param calculationData from order creation page
-     * @return order volume weight
-     */
-    private double calculateOrderVolumeWeight (Map < String, String > calculationData) throws IncorrectInputException {
-        String orderLength = calculationData.get(ORDER_LENGTH);
-        String orderHeight = calculationData.get(ORDER_HEIGHT);
-        String orderWidth = calculationData.get(ORDER_WIDTH);
-        String orderWeight = calculationData.get(ORDER_WEIGHT);
-
-        double orderLengthToDouble = Double.parseDouble(orderLength);
-        double orderHeightToDouble = Double.parseDouble(orderHeight);
-        double orderWidthToDouble = Double.parseDouble(orderWidth);
-        double orderWeightToDouble = Double.parseDouble(orderWeight);
-
-        return Calculator.calculateOrderVolumeWeight(orderLengthToDouble,
-                orderHeightToDouble,
-                orderWidthToDouble,
-                orderWeightToDouble);
     }
 }

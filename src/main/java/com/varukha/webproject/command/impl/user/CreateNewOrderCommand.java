@@ -2,11 +2,11 @@ package com.varukha.webproject.command.impl.user;
 
 import com.varukha.webproject.command.*;
 import com.varukha.webproject.controller.context.AppContext;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.service.*;
-import com.varukha.webproject.util.Calculator;
+import com.varukha.webproject.util.validation.DataValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -18,14 +18,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Create new order command
+ * Class CreateNewOrderCommand it is a command type
+ * that used to create new order to cargo delivery and return route
+ * to personal page if operation was successful.
+ *
  * @author Dmytro Varukha
  * @version 1.0
- *
  */
-
-
-
 public class CreateNewOrderCommand implements Command {
 
     private static final Logger logger = LogManager.getLogger();
@@ -36,25 +35,89 @@ public class CreateNewOrderCommand implements Command {
     AddressSecondService addressSecondService = AppContext.getAppContext().getAddressSecondService();
 
 
+    /**
+     * Method execute use as start point of executing CreateNewOrderCommand.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
     @Override
     public Router execute(HttpServletRequest request, HttpServletResponse response) {
         logger.log(Level.DEBUG, "Executing CreateNewOrderCommand");
         Router router = new Router();
         HttpSession session = request.getSession();
         Map<String, String> invoiceData = new HashMap<>();
+        long addressFirstId;
+        long addressSecondId;
+        long deliveryId;
+        long orderId;
         User user = (User) session.getAttribute(ParameterAndAttribute.USER);
-        String page = request.getContextPath() + PagePath.TO_PERSONAL_PAGE;
-
         String userId = Long.toString(user.getUserId());
-        String orderName = request.getParameter(ParameterAndAttribute.ORDER_NAME);
         String orderType = request.getParameter(ParameterAndAttribute.ORDER_TYPE);
-        String orderPrice = request.getParameter(ParameterAndAttribute.ORDER_PRICE);
-        String deliveryType = request.getParameter(ParameterAndAttribute.DELIVERY_TYPE);
-        String deliveryDistance = request.getParameter(ParameterAndAttribute.DELIVERY_DISTANCE);
         String orderWeight = request.getParameter(ParameterAndAttribute.ORDER_WEIGHT);
         String orderLength = request.getParameter(ParameterAndAttribute.ORDER_LENGTH);
         String orderHeight = request.getParameter(ParameterAndAttribute.ORDER_HEIGHT);
         String orderWidth = request.getParameter(ParameterAndAttribute.ORDER_WIDTH);
+
+        try {
+            boolean typeOfOrder = DataValidator.isOrderTypeValid(orderType, orderWeight, orderLength, orderHeight, orderWidth);
+            if (typeOfOrder) {
+                getDataFromRequest(request, invoiceData, userId, orderType, orderWeight, orderLength, orderHeight, orderWidth);
+                addressFirstId = addressFirstService.addAddressFirst(invoiceData);
+                invoiceData.put(ParameterAndAttribute.FIRST_ADDRESS_ID, String.valueOf(addressFirstId));
+
+                addressSecondId = addressSecondService.addAddressSecond(invoiceData);
+                invoiceData.put(ParameterAndAttribute.SECOND_ADDRESS_ID, String.valueOf(addressSecondId));
+
+                deliveryId = deliveryService.addDelivery(invoiceData);
+                invoiceData.put(ParameterAndAttribute.DELIVERY_ID, String.valueOf(deliveryId));
+
+                orderId = orderService.addOrder(invoiceData);
+                invoiceData.put(ParameterAndAttribute.ID_ORDER, String.valueOf(orderId));
+
+                invoiceService.addInvoice(invoiceData);
+                logger.log(Level.INFO, "Invoice data were updated successfully");
+                redirectToPageWhenUpdateSuccess(request, router);
+            }
+        } catch (ServiceException | IncorrectInputException e) {
+            logger.log(Level.ERROR, "IncorrectInputException in verificationOrderType method or ServiceException in update methods " + e);
+            redirectToPageWhenUpdateFailed(request, router);
+        }
+        return router;
+    }
+
+    /**
+     * Method redirectToPageWhenUpdateFailed used to go to the next page if the invoice updated is failed
+     */
+    private static void redirectToPageWhenUpdateFailed(HttpServletRequest request, Router router) {
+        request.setAttribute(ParameterAndAttribute.MESSAGE, Message.INCORRECT_ORDER_TYPE);
+        String page = request.getContextPath() + PagePath.TO_PERSONAL_PAGE;
+        router.setPagePath(page);
+        router.setType(Router.Type.REDIRECT);
+    }
+
+    /**
+     * Method redirectToPageWhenUpdateSuccess used to go to the next page if the invoice updated is successfully
+     */
+    private static void redirectToPageWhenUpdateSuccess(HttpServletRequest request, Router router) {
+        request.setAttribute(ParameterAndAttribute.MESSAGE, Message.ORDER_WAS_CREATED);
+        String page = request.getContextPath() + PagePath.TO_PERSONAL_PAGE;
+        router.setPagePath(page);
+        router.setType(Router.Type.REDIRECT);
+    }
+
+    /**
+     * Method getDataFromRequest using in order to put invoice data from user request to Map, and use it in the
+     * updateInvoice command.
+     */
+    private static void getDataFromRequest(HttpServletRequest request, Map<String, String> invoiceData, String userId,
+                                           String orderType, String orderWeight, String orderLength, String orderHeight, String orderWidth) {
+        logger.log(Level.DEBUG, "Invoice data in map from request: " + invoiceData);
+        String orderName = request.getParameter(ParameterAndAttribute.ORDER_NAME);
+        String orderPrice = request.getParameter(ParameterAndAttribute.ORDER_PRICE);
+        String deliveryType = request.getParameter(ParameterAndAttribute.DELIVERY_TYPE);
+        String deliveryDistance = request.getParameter(ParameterAndAttribute.DELIVERY_DISTANCE);
         String orderDescription = request.getParameter(ParameterAndAttribute.ORDER_DESCRIPTION);
         String recipientName = request.getParameter(ParameterAndAttribute.RECIPIENT_NAME);
         String recipientSurname = request.getParameter(ParameterAndAttribute.RECIPIENT_SURNAME);
@@ -90,32 +153,6 @@ public class CreateNewOrderCommand implements Command {
         invoiceData.put(ParameterAndAttribute.SECOND_STREET_NUMBER, second_street_number);
         invoiceData.put(ParameterAndAttribute.FIRST_HOUSE_NUMBER, first_house_number);
         invoiceData.put(ParameterAndAttribute.SECOND_HOUSE_NUMBER, second_house_number);
-        logger.log(Level.DEBUG, "Invoice data in map from request: " + invoiceData);
-        try {
-            String typeOfOrder = Calculator.getCorrectOrderType(orderType, orderWeight, orderLength, orderHeight, orderWidth);
-            if (orderType.equals(typeOfOrder)) {
-
-                long addressFirstId = addressFirstService.addAddressFirst(invoiceData);
-                invoiceData.put(ParameterAndAttribute.FIRST_ADDRESS_ID, String.valueOf(addressFirstId));
-                long addressSecondId = addressSecondService.addAddressSecond(invoiceData);
-                invoiceData.put(ParameterAndAttribute.SECOND_ADDRESS_ID, String.valueOf(addressSecondId));
-                long deliveryId = deliveryService.addDelivery(invoiceData);
-                invoiceData.put(ParameterAndAttribute.DELIVERY_ID, String.valueOf(deliveryId));
-                long orderId = orderService.addOrder(invoiceData);
-                invoiceData.put(ParameterAndAttribute.ID_ORDER, String.valueOf(orderId));
-
-                invoiceService.addInvoice(invoiceData);
-                request.setAttribute(ParameterAndAttribute.MESSAGE, Message.ORDER_WAS_CREATED);
-                router.setPagePath(page);
-                router.setType(Router.Type.REDIRECT);
-            }
-        } catch (ServiceException | IncorrectInputException e) {
-            logger.log(Level.ERROR, "Exception in CreateNewOrderCommand methods " + e);
-            request.setAttribute(ParameterAndAttribute.MESSAGE, Message.INCORRECT_ORDER_TYPE);
-            router.setPagePath(page);
-            router.setType(Router.Type.REDIRECT);
-        }
-        return router;
     }
 }
 

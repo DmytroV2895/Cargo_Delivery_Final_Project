@@ -1,15 +1,16 @@
 package com.varukha.webproject.command;
 
 /**
- * @author Dmytro Varukha
+ * Class Router used to routing between application pages.
  *
+ * @author Dmytro Varukha
+ * @version 1.0
  */
 
 public class Router {
+
 	/**
-	 * Inner enum describe all possibles router type
-	 * @author Dmytro Varukha
-	 *
+	 * Enum describe all possibles router types.
 	 */
 	public enum Type{
 		FORWARD,
@@ -26,8 +27,8 @@ public class Router {
 	}
 	
 	/**
-	 * Constructor set default route type: Forward 
-	 * @param pagePath
+	 * Constructor set default route type(Forward) by necessary page path.
+	 * @param pagePath path to the page
 	 */
 	public Router(String pagePath) {
 		this.pagePath = pagePath;
@@ -35,9 +36,9 @@ public class Router {
 	}
 
 	/**
-	 * Constructor
-	 * @param pagePath
-	 * @param type (type of router)
+	 * Constructor set route type by necessary page path.
+	 * @param pagePath path to the page
+	 * @param type {@link Type}
 	 */
 	public Router(String pagePath, Type type) {
 		this.pagePath = pagePath;

@@ -3,8 +3,8 @@ package com.varukha.webproject.command.impl.routs;
 
 import com.varukha.webproject.command.*;
 import com.varukha.webproject.controller.context.AppContext;
-import com.varukha.webproject.entity.Invoice;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.Invoice;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.service.InvoiceService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,12 +26,20 @@ import java.util.List;
 public class ToOrdersPageUserCommand implements Command {
 	private static final Logger logger = LogManager.getLogger();
 	InvoiceService invoiceService = AppContext.getAppContext().getInvoiceService();
-	int startRow = 0;
 
+
+	/**
+	 * Method execute use as start point of executing ToOrdersPageUserCommand.
+	 *
+	 * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+	 * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+	 * @return route to the specified page.
+	 */
 	@Override
 	public Router execute(HttpServletRequest request, HttpServletResponse response) {
 		logger.log(Level.INFO, "Executing ToOrdersPageUserCommand");
 		int numberOfPages;
+		int startRow = 0;
 		Router router = new Router();
 		HttpSession session = request.getSession();
 		User user = (User) session.getAttribute(ParameterAndAttribute.USER);
@@ -39,7 +47,7 @@ public class ToOrdersPageUserCommand implements Command {
 
 		try {
 			List<Invoice> invoices = invoiceService.getAllOrdersInfoFromInvoiceByUserId(userId, startRow);
-			numberOfPages = invoiceService.getNumberOfRowsInInvoiceTableByUserId(userId);
+			numberOfPages = invoiceService.getNumberOfRecordsInInvoiceTableByUserId(userId);
 			if (!invoices.isEmpty()) {
 				session.setAttribute(ParameterAndAttribute.CURRENT_PAGE, PagePath.TO_ORDERS_USER_PAGE);
 				router.setPagePath(PagePath.ORDERS_USER_PAGE);

@@ -12,15 +12,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- *  Go to order page command
+ * Class ToOrderCreatePageUserCommand it is a command type that used to get
+ * route to order create page for user.
+ *
  * @author Dmytro Varukha
  * @version 1.0
- *
  */
 public class ToOrderCreatePageUserCommand implements Command {
 
     private static final Logger logger = LogManager.getLogger();
 
+    /**
+     * Method execute use as start point of executing ToOrderCreatePageUserCommand.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
     @Override
     public Router execute(HttpServletRequest request, HttpServletResponse response) {
         logger.log(Level.INFO, "Execute ToOrderCreatePageUserCommand");

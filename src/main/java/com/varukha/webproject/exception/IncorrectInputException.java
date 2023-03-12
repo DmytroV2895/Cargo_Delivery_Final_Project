@@ -1,12 +1,13 @@
 package com.varukha.webproject.exception;
 
 /**
- * @author Dmytro Varukha
+ * Class IncorrectInputException used to provide correctness
+ * application work by throwing exceptions in case of incorrect calculation data.
  *
+ * @author Dmytro Varukha
+ * @version 1.0
  */
-
 public class IncorrectInputException extends Exception {
-
 
     public IncorrectInputException() {
         super();

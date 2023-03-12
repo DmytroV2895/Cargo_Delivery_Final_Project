@@ -1,36 +1,48 @@
 package com.varukha.webproject.model.service.impl;
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.User;
-import com.varukha.webproject.entity.User.*;
+import com.varukha.webproject.model.entity.User;
+import com.varukha.webproject.model.entity.User.*;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.dao.ColumnName;
 import com.varukha.webproject.model.dao.UserDAO;
 import com.varukha.webproject.model.service.UserService;
-import com.varukha.webproject.model.service.validation.DataValidator;
-//import com.varukha.webproject.util.MailSender;
+import com.varukha.webproject.util.validation.DataValidator;
 import com.varukha.webproject.util.Encoder;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 
+/**
+ * Class UserServiceImpl implements methods for
+ * interacting between View layer and the MySQL Data Access layer
+ *
+ * @author Dmytro Varukha
+ * @version 1.0
+ */
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LogManager.getLogger();
     private final UserDAO userDAO;
 
-
     public UserServiceImpl(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 
+    /**
+     * Method getAllUsers is an intermediate service method for communication between
+     * the user view layer and the database and used to get all users.
+     *
+     * @return list of all users from database.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public List<User> getAllUsers() throws ServiceException {
         logger.log(Level.DEBUG, "Getting all users");
@@ -45,6 +57,16 @@ public class UserServiceImpl implements UserService {
         return users;
     }
 
+    /**
+     * Method getUserEmailPassword is an intermediate service method for communication between
+     * the user view layer and the database and used to get user password by email.
+     *
+     * @param email    user email address in which the search is performed.
+     * @param password user password in which the search is performed.
+     * @return optional result of operation. Return user password if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public Optional<User> getUserEmailPassword(String email, String password) throws ServiceException {
         logger.log(Level.DEBUG, "findUserByEmailPassword()");
@@ -67,7 +89,7 @@ public class UserServiceImpl implements UserService {
                     optionalUser = Optional.empty();
                 }
             } catch (DAOException e) {
-                logger.log(Level.ERROR, "DAO exception in FindUsersByLoginPassword method " + e);
+                logger.log(Level.ERROR, "DAO exception in getUserEmailPassword method " + e);
                 throw new ServiceException(e);
             }
         } else {
@@ -76,38 +98,64 @@ public class UserServiceImpl implements UserService {
         return optionalUser;
     }
 
+    /**
+     * Method getUserByEmail is an intermediate service method for communication between
+     * the user view layer and the database and used to get user by email.
+     *
+     * @param email user email address in which the search is performed.
+     * @return optional result of operation. Return user if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public Optional<User> getUserByEmail(String email) throws ServiceException {
         logger.log(Level.DEBUG, "Get user by email: " + email);
-        Optional<User> user;
+        Optional<User> optionalUserByEmail;
         try {
             if (DataValidator.isEmailValid(email)) {
-                user = userDAO.findUserByEmail(email);
+                optionalUserByEmail = userDAO.findUserByEmail(email);
             } else {
-                user = Optional.empty();
+                optionalUserByEmail = Optional.empty();
             }
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in findUserByEmail method " + e);
+            logger.log(Level.ERROR, "DAO exception in getUserByEmail method " + e);
             throw new ServiceException(e);
         }
-        return user;
+        return optionalUserByEmail;
     }
 
+    /**
+     * Method getUserById is an intermediate service method for communication between
+     * the user view layer and the database and used to get user by user id.
+     *
+     * @param userId user id in which the search is performed.
+     * @return optional result of operation. Return user if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
-    public List<User> getUserById(long userId) throws ServiceException {
+    public Optional<User> getUserById(long userId) throws ServiceException {
         logger.log(Level.DEBUG, "Get user by userId:" + userId);
-        List<User> user;
+        Optional<User> optionalUserById;
         try {
-            user = userDAO.findUserById(userId);
-            logger.log(Level.INFO, "User by userId: " + user);
+            optionalUserById = userDAO.findUserById(userId);
+            logger.log(Level.INFO, "User by userId: " + optionalUserById);
         } catch (DAOException e) {
             logger.log(Level.ERROR, "DAO exception in getUserById method " + e);
             throw new ServiceException(e);
         }
-        return user;
+        return optionalUserById;
     }
 
-
+    /**
+     * Method addUser used is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to add new user to database.
+     *
+     * @param userData contain a set of data from user request that will be process in data access layer.
+     * @return boolean result of operation. Return true if new user was added and false if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public boolean addUser(Map<String, String> userData) throws ServiceException {
         logger.log(Level.DEBUG, "Adding user. UserData:" + userData);
@@ -141,39 +189,38 @@ public class UserServiceImpl implements UserService {
         return isUserAdded;
     }
 
-//    @Override
-//    public boolean changePersonalInfo(User user, Map<String, String> userData) throws ServiceException {
-//        logger.log(Level.DEBUG, "Changing personal information of: " + user);
-//        boolean isChanged = false;
-//        if (DataValidator.isNameValid(userData.get(ParameterAndAttribute.USER_NAME))
-//                && DataValidator.isNameValid(userData.get(ParameterAndAttribute.USER_SURNAME))) {
-//            user.setName(userData.get(ParameterAndAttribute.USER_NAME));
-//            user.setSurname(userData.get(ParameterAndAttribute.USER_SURNAME));
-//            user.setPhone(userData.get(ParameterAndAttribute.USER_PHONE));
-//            try {
-//                isChanged = userDAO.changePersonalInfo(user);
-//            } catch (DaoException e) {
-//                logger.log(Level.ERROR, "DAO exception in changePersonalInfo method  " + e);
-//                throw new ServiceException(e);
-//            }
-//        }
-//        return isChanged;
-//    }
-
-
+    /**
+     * Method addMoneyToUserAccount is an intermediate service method for communication between
+     * the user view layer and the database and used to top up user account in order to pay delivery service.
+     *
+     * @param userId      user id in which the search is performed.
+     * @param userAccount contain sum of money in order to top up user account.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public boolean addMoneyToUserAccount(long userId, String userAccount) throws ServiceException {
         logger.log(Level.DEBUG, "Add money to user account: " + userAccount);
         boolean isAdded;
         try {
-            isAdded = userDAO.addMoneyToUserAccount(userId, userAccount);
+            isAdded = userDAO.topUpUserAccount(userId, userAccount);
         } catch (DAOException e) {
-            logger.log(Level.ERROR, "DAO exception in method FindUsersByRole" + e);
+            logger.log(Level.ERROR, "DAO exception in method addMoneyToUserAccount" + e);
             throw new ServiceException(e);
         }
         return isAdded;
     }
 
+    /**
+     * Method payForDeliveryService is an intermediate service method for communication between
+     * the user view layer and the database and used to pay delivery service.
+     *
+     * @param userId     user id in which the search is performed.
+     * @param totalPrice contain payment sum for delivery service.
+     * @return boolean result of operation. Return true if payment was successfully and false if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
     @Override
     public boolean payForDeliveryService(String totalPrice, long userId) throws ServiceException {
         logger.log(Level.DEBUG, "Payment operation for delivering service. delivery price: " + totalPrice);
@@ -186,7 +233,6 @@ public class UserServiceImpl implements UserService {
         }
         return isPaid;
     }
-
 }
 
 

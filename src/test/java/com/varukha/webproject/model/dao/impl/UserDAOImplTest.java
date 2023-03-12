@@ -1,7 +1,7 @@
 package com.varukha.webproject.model.dao.impl;
 
 
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
 import com.varukha.webproject.model.dao.UserDAO;
@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 import java.sql.*;
 
 import static com.varukha.webproject.model.dao.ColumnName.*;
-import static com.varukha.webproject.model.dao.impl.DAOTestUtil.getTestUser;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
@@ -35,9 +34,6 @@ class UserDAOImplTest {
                 .build();
     }
 
-    @Test
-    void findUserEmailPassword() {
-    }
 
     @Test
     void findUserByEmail() throws SQLException, DAOException {
@@ -78,7 +74,7 @@ class UserDAOImplTest {
         try (PreparedStatement ignored = prepareMocks(connectionPool)) {
             assertTrue(() -> {
                 try {
-                    return userDAO.addMoneyToUserAccount(userId, moneySum);
+                    return userDAO.topUpUserAccount(userId, moneySum);
                 } catch (DAOException e) {
                     throw new RuntimeException(e);
                 }

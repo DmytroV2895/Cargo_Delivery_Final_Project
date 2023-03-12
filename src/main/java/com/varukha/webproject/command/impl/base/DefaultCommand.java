@@ -12,18 +12,27 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- * This type of command returns when system can't define the command
- * @author Dmytro Varukha
+ * Class DefaultCommand it is a command type that returns route
+ * to the main page when the application can not define the command type.
  *
+ * @author Dmytro Varukha
+ * @version 1.0
  */
 public class DefaultCommand implements Command {
-	private static final Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger();
 
-	@Override
-	public Router execute(HttpServletRequest request, HttpServletResponse response) {
-		Router router = new Router();
-		router.setPagePath(PagePath.MAIN_PAGE);
-		logger.log(Level.INFO, "Unknown command ");
-		return router;
-	}
+    /**
+     * Method execute use as start point of executing DefaultCommand.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
+    @Override
+    public Router execute(HttpServletRequest request, HttpServletResponse response) {
+        Router router = new Router();
+        router.setPagePath(PagePath.MAIN_PAGE);
+        logger.log(Level.INFO, "Unknown command ");
+        return router;
+    }
 }

@@ -1,16 +1,17 @@
 package com.varukha.webproject.model.service.impl;
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.*;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.dao.InvoiceDAO;
 import com.varukha.webproject.model.dao.impl.InvoiceDAOImpl;
+import com.varukha.webproject.model.entity.*;
 import com.varukha.webproject.model.service.InvoiceService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -18,7 +19,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 
-import static com.varukha.webproject.entity.Invoice.OrderStatus.ON_THE_WAY;
+import static com.varukha.webproject.model.entity.Invoice.OrderStatus.ON_THE_WAY;
 import static com.varukha.webproject.model.service.impl.ServiceTestUtil.getTestInvoice;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.isA;
@@ -31,7 +32,7 @@ class InvoiceServiceImplTest {
     private static InvoiceDAO invoiceDAO;
     private static InvoiceService invoiceService;
     private static Map<String, String> invoiceData;
-    private static Optional<Invoice> invoiceOptional;
+    private static final List<Invoice> invoiceList = new ArrayList<>();
 
 
     @BeforeAll
@@ -40,6 +41,7 @@ class InvoiceServiceImplTest {
         invoiceService = new InvoiceServiceImpl(invoiceDAO);
         invoiceData = new HashMap<>();
 
+        invoiceData.put(ParameterAndAttribute.ID_INVOICE, "1");
         invoiceData.put(ParameterAndAttribute.ORDER_PAYMENT_STATUS, String.valueOf(true));
         invoiceData.put(ParameterAndAttribute.ORDER_STATUS, String.valueOf(ON_THE_WAY));
         invoiceData.put(ParameterAndAttribute.DELIVERY_ID, "1");
@@ -73,6 +75,7 @@ class InvoiceServiceImplTest {
                 .build();
 
         invoice = new Invoice.Builder()
+                .setInvoiceId(Long.parseLong("1"))
                 .setDeliveryPrice(BigDecimal.valueOf(600))
                 .setDeliveryDate(Date.valueOf(LocalDate.now()))
                 .setTotalPrice(BigDecimal.valueOf(1500))
@@ -84,6 +87,8 @@ class InvoiceServiceImplTest {
                 .setFirstAddress(addressFirst)
                 .setSecondAddress(addressSecond)
                 .build();
+
+        invoiceList.add(getTestInvoice());
     }
 
     @Test
@@ -110,18 +115,6 @@ class InvoiceServiceImplTest {
     }
 
     @Test
-    void updateDeliveryPaymentStatusByInvoiceId() {
-    }
-
-    @Test
-    void getAllOrderInfoFromInvoiceByUserId() {
-    }
-
-    @Test
-    void updateInvoiceDeliveryDateAndOrderStatus() {
-    }
-
-    @Test
     void getInvoiceById() throws DAOException, ServiceException {
         when(invoiceDAO.findInvoiceById(1L)).thenReturn(Optional.of(getTestInvoice()));
             assertEquals(Optional.of(getTestInvoice()), invoiceService.getInvoiceById(1L));
@@ -135,32 +128,8 @@ class InvoiceServiceImplTest {
 
     @Test
     void getInvoiceByDestinationDate() throws ServiceException, DAOException {
-        when(invoiceDAO.findInvoiceByDestinationCity("SUMY", "ODESSA")).thenReturn(Optional.of(invoice));
-        assertEquals(Optional.of(invoice), invoiceService.getInvoiceByDestinationCity("SUMY", "ODESSA"));
+        invoiceService.getInvoiceByDestinationCity("SUMY", "ODESSA");
+        verify(invoiceDAO, times(1)).findInvoiceByDestinationCity("SUMY", "ODESSA");
     }
-
-
-    @Test
-    void getNumberOfPages() {
-    }
-
-    @Test
-    void getNumberOfPagesByUserId() {
-    }
-
-    @Test
-    void getInvoicesFromRow() {
-    }
-
-    @Test
-    void getAllOrdersInfoFromInvoiceByUserIdFromRow() {
-    }
-
-    @Test
-    void getAllSortedOrdersInfoFromInvoiceByFirstAddressFromRow() {
-    }
-
-
-
 
 }

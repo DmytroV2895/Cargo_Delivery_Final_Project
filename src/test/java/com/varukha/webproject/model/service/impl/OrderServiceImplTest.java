@@ -2,9 +2,7 @@ package com.varukha.webproject.model.service.impl;
 
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.Delivery;
-import com.varukha.webproject.entity.Order;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.Order;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
@@ -20,9 +18,7 @@ import org.mockito.Mockito;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import static com.varukha.webproject.model.service.impl.ServiceTestUtil.getTestOrder;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.isA;
@@ -31,9 +27,7 @@ import static org.mockito.Mockito.*;
 class OrderServiceImplTest {
 
     private static OrderDAO orderDAO;
-
     private static Order order;
-
     private static OrderService orderService;
     private static Map<String, String> orderData;
 
@@ -44,6 +38,7 @@ class OrderServiceImplTest {
         orderService = new OrderServiceImpl(orderDAO);
         orderData = new HashMap<>();
 
+        orderData.put(ParameterAndAttribute.ID_ORDER, "1");
         orderData.put(ParameterAndAttribute.ORDER_NAME, "Computer");
         orderData.put(ParameterAndAttribute.ORDER_TYPE, "CARGO");
         orderData.put(ParameterAndAttribute.ORDER_DESCRIPTION, "New computer");
@@ -54,15 +49,6 @@ class OrderServiceImplTest {
         orderData.put(ParameterAndAttribute.ORDER_WIDTH, "45");
         orderData.put(ParameterAndAttribute.ORDER_VOLUME, "50");
         orderData.put(ParameterAndAttribute.ORDER_VOLUME_WEIGHT, "50");
-        orderData.put(ParameterAndAttribute.USER_ID, "1");
-        orderData.put(ParameterAndAttribute.DELIVERY_ID, "1");
-
-        User user = new User.Builder()
-                .setUserId(1)
-                .build();
-        Delivery delivery = new Delivery.Builder()
-                .setDeliveryId(1)
-                .build();
 
         order = new Order.Builder()
                 .setOrderName("Computer")
@@ -75,8 +61,6 @@ class OrderServiceImplTest {
                 .setOrderWidth(45)
                 .setOrderVolume(1025.1)
                 .setOrderVolumeWeight(50)
-                .setUserId(user)
-                .setDeliveryId(delivery)
                 .build();
     }
 

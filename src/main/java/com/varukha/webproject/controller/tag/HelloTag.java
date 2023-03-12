@@ -1,20 +1,25 @@
 package com.varukha.webproject.controller.tag;
 
-
-import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.TagSupport;
-
 import java.io.IOException;
 
-public class HelloTag extends TagSupport {
 
+/**
+ * Class HelloTag used to display a greeting for the
+ * client or user upon successful registration in the system.
+ */
+public class HelloTag extends TagSupport {
 
         private String role;
         public void setRole(String role) {
             this.role = role;
         }
-        @Override
+
+    /**
+     * Override method  doStartTag used to display greeting message in depend on the use role.
+     */
+    @Override
         public int doStartTag() throws JspException {
             try {
                 String to = null;

@@ -2,7 +2,7 @@ package com.varukha.webproject.command.impl.user;
 
 import com.varukha.webproject.command.*;
 import com.varukha.webproject.controller.context.AppContext;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.service.*;
@@ -16,23 +16,32 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.varukha.webproject.model.service.validation.DataValidator.verificationOrderType;
+import static com.varukha.webproject.util.validation.DataValidator.isOrderTypeValid;
 
 
 /**
- * UpdateInvoiceInformationCommand used to update invoice from user request
+ * Class UpdateInvoiceInformationCommand it is a command type
+ * that used to update order data by user return route
+ * to user personal page if operation was successful.
+ *
  * @author Dmytro Varukha
  * @version 1.0
  */
 public class UpdateInvoiceInformationCommand implements Command {
     private static final Logger logger = LogManager.getLogger();
-    InvoiceService invoiceService = AppContext.getAppContext().getInvoiceService();
-    DeliveryService deliveryService = AppContext.getAppContext().getDeliveryService();
-    OrderService orderService = AppContext.getAppContext().getOrderService();
-    AddressFirstService addressFirstService = AppContext.getAppContext().getAddressFirstService();
-    AddressSecondService addressSecondService = AppContext.getAppContext().getAddressSecondService();
+   private final InvoiceService invoiceService = AppContext.getAppContext().getInvoiceService();
+    private final DeliveryService deliveryService = AppContext.getAppContext().getDeliveryService();
+    private final OrderService orderService = AppContext.getAppContext().getOrderService();
+    private final AddressFirstService addressFirstService = AppContext.getAppContext().getAddressFirstService();
+    private final AddressSecondService addressSecondService = AppContext.getAppContext().getAddressSecondService();
 
-
+    /**
+     * Method execute use as start point of executing UpdateInvoiceInformationCommand.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
     @Override
     public Router execute(HttpServletRequest request, HttpServletResponse response) {
         logger.log(Level.DEBUG, "Execute method UpdateInvoiceInformationCommand");
@@ -49,7 +58,7 @@ public class UpdateInvoiceInformationCommand implements Command {
         String orderWidth = request.getParameter(ParameterAndAttribute.ORDER_WIDTH);
 
         try {
-            boolean typeOfOrder = verificationOrderType(orderType, orderWeight, orderLength, orderHeight, orderWidth);
+            boolean typeOfOrder = isOrderTypeValid(orderType, orderWeight, orderLength, orderHeight, orderWidth);
             if (typeOfOrder) {
                 getDataFromRequest(request, invoiceData, userId, orderType, orderWeight, orderLength, orderHeight, orderWidth);
 
@@ -60,14 +69,16 @@ public class UpdateInvoiceInformationCommand implements Command {
                 invoiceService.updateInvoice(invoiceData);
 
                 logger.log(Level.INFO, "Invoice data were updated successfully");
-                redirectToPageWhenUpdateSuccess(request, router);
+                request.setAttribute(ParameterAndAttribute.MESSAGE, Message.ORDER_WAS_UPDATED);
+                redirectToPage(request, router);
             } else {
                 logger.log(Level.ERROR, "IncorrectInputException in verificationOrderType method ");
-                redirectToPageWhenUpdateFailed(request, router);
+                request.setAttribute(ParameterAndAttribute.MESSAGE, Message.INCORRECT_ORDER_TYPE);
+                redirectToPage(request, router);
             }
         } catch (ServiceException | IncorrectInputException e) {
             logger.log(Level.ERROR, "IncorrectInputException in verificationOrderType method or ServiceException in update methods " + e);
-            redirectToPageWhenUpdateFailed(request, router);
+            redirectToPage(request, router);
         }
         return router;
     }
@@ -75,42 +86,29 @@ public class UpdateInvoiceInformationCommand implements Command {
     /**
      * Method redirectToPageWhenUpdateFailed used to go to the next page if the invoice updated is failed
      */
-    private static void redirectToPageWhenUpdateFailed(HttpServletRequest request, Router router) {
-        request.setAttribute(ParameterAndAttribute.MESSAGE, Message.INCORRECT_ORDER_TYPE);
-        String page = request.getContextPath() + PagePath.TO_PERSONAL_PAGE;
+    private static void redirectToPage(HttpServletRequest request, Router router) {
+        String page = request.getContextPath() + PagePath.TO_ORDERS_USER_PAGE;
         router.setPagePath(page);
         router.setType(Router.Type.REDIRECT);
-
-    }
-
-    /**
-     * Method redirectToPageWhenUpdateSuccess used to go to the next page if the invoice updated is successfully
-     */
-    private static void redirectToPageWhenUpdateSuccess(HttpServletRequest request, Router router) {
-        request.setAttribute(ParameterAndAttribute.MESSAGE, Message.ORDER_WAS_UPDATED);
-        String page = request.getContextPath() + PagePath.TO_PERSONAL_PAGE;
-        router.setPagePath(page);
-        router.setType(Router.Type.REDIRECT);
-
     }
 
 
     /**
      * Method getDataFromRequest using in order to put invoice data from user request to Map, and use it in the
-     * updateInvoice method
+     * updateInvoice command.
      */
     private static void getDataFromRequest(HttpServletRequest request, Map<String, String> invoiceData, String userId,
                                            String orderType, String orderWeight, String orderLength, String orderHeight, String orderWidth) {
         logger.log(Level.DEBUG, "Invoice data in map from request: " + invoiceData);
         String invoiceId = request.getParameter(ParameterAndAttribute.ID_INVOICE);
-        String addressFirstId = request.getParameter(ParameterAndAttribute.ID_FIRST_ADDRESS);
-        String addressSecondId = request.getParameter(ParameterAndAttribute.ID_SECOND_ADDRESS);
+        String addressFirstId = request.getParameter(ParameterAndAttribute.FIRST_ADDRESS_ID);
+        String addressSecondId = request.getParameter(ParameterAndAttribute.SECOND_ADDRESS_ID);
         String orderId = request.getParameter(ParameterAndAttribute.ID_ORDER);
         String deliveryId = request.getParameter(ParameterAndAttribute.DELIVERY_ID);
         String orderName = request.getParameter(ParameterAndAttribute.ORDER_NAME);
         String orderPrice = request.getParameter(ParameterAndAttribute.ORDER_PRICE);
         String deliveryType = request.getParameter(ParameterAndAttribute.DELIVERY_TYPE);
-        String deliveryDistance = request.getParameter(ParameterAndAttribute.DELIVERY_DISTANCE);
+
         String orderDescription = request.getParameter(ParameterAndAttribute.ORDER_DESCRIPTION);
         String recipientName = request.getParameter(ParameterAndAttribute.RECIPIENT_NAME);
         String recipientSurname = request.getParameter(ParameterAndAttribute.RECIPIENT_SURNAME);
@@ -125,8 +123,8 @@ public class UpdateInvoiceInformationCommand implements Command {
         String second_house_number = request.getParameter(ParameterAndAttribute.SECOND_HOUSE_NUMBER);
 
         invoiceData.put(ParameterAndAttribute.ID_INVOICE, invoiceId);
-        invoiceData.put(ParameterAndAttribute.ID_FIRST_ADDRESS, addressFirstId);
-        invoiceData.put(ParameterAndAttribute.ID_SECOND_ADDRESS, addressSecondId);
+        invoiceData.put(ParameterAndAttribute.FIRST_ADDRESS_ID, addressFirstId);
+        invoiceData.put(ParameterAndAttribute.SECOND_ADDRESS_ID, addressSecondId);
         invoiceData.put(ParameterAndAttribute.DELIVERY_ID, deliveryId);
         invoiceData.put(ParameterAndAttribute.ID_ORDER, orderId);
         invoiceData.put(ParameterAndAttribute.USER_ID, userId);
@@ -134,7 +132,7 @@ public class UpdateInvoiceInformationCommand implements Command {
         invoiceData.put(ParameterAndAttribute.ORDER_TYPE, orderType);
         invoiceData.put(ParameterAndAttribute.ORDER_PRICE, orderPrice);
         invoiceData.put(ParameterAndAttribute.DELIVERY_TYPE, deliveryType);
-        invoiceData.put(ParameterAndAttribute.DELIVERY_DISTANCE, deliveryDistance);
+
         invoiceData.put(ParameterAndAttribute.ORDER_WEIGHT, orderWeight);
         invoiceData.put(ParameterAndAttribute.ORDER_LENGTH, orderLength);
         invoiceData.put(ParameterAndAttribute.ORDER_HEIGHT, orderHeight);

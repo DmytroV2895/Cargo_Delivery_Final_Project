@@ -9,7 +9,8 @@ import com.varukha.webproject.model.service.impl.*;
 
 
 /**
- * AppContext  class. Contains all required to correct application work objects
+ * Class AppContext  contains all required to correct application work objects.
+ *
  * @author Dmytro Varukha
  * @version 1.0
  */
@@ -31,7 +32,6 @@ public class AppContext {
     public OrderService getOrderService() {
         return orderService;
     }
-
     public InvoiceService getInvoiceService() {
         return invoiceService;
     }
@@ -59,6 +59,7 @@ public class AppContext {
     }
 
     /**
+     * Method getAppContext used to get instance of AppContext to use in commands.
      * @return instance of AppContext
      */
     public static AppContext getAppContext() {
@@ -66,7 +67,7 @@ public class AppContext {
     }
 
     /**
-     * Creates instance of AppContext to use in commands
+     * Method createAppContext used to create instance of AppContext to use in commands.
      */
     public static void createAppContext() {
         appContext = new AppContext();

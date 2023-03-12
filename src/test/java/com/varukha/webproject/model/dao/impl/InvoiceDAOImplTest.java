@@ -1,17 +1,19 @@
 package com.varukha.webproject.model.dao.impl;
 
-import com.varukha.webproject.entity.*;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
 import com.varukha.webproject.model.dao.InvoiceDAO;
+import com.varukha.webproject.model.entity.Invoice;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.varukha.webproject.entity.Delivery.DeliveryType.BY_TRUCK;
-import static com.varukha.webproject.entity.Invoice.OrderStatus.ON_THE_WAY;
-import static com.varukha.webproject.entity.Order.Type.CARGO;
+import static com.varukha.webproject.model.entity.Delivery.DeliveryType.BY_TRUCK;
+import static com.varukha.webproject.model.entity.Invoice.OrderStatus.ON_THE_WAY;
+import static com.varukha.webproject.model.entity.Order.Type.CARGO;
 import static com.varukha.webproject.model.dao.ColumnName.*;
 import static com.varukha.webproject.model.dao.impl.DAOTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,6 +22,12 @@ import static org.mockito.Mockito.*;
 
 class InvoiceDAOImplTest {
 
+    private static final List<Invoice> invoiceList = new ArrayList<>();
+
+    @BeforeAll
+    public static void setUp() {
+        invoiceList.add(getTestInvoice());
+    }
     @Test
     void testAddInvoice() throws SQLException {
         ConnectionPool connectionPool = mock(ConnectionPool.class);
@@ -67,10 +75,10 @@ class InvoiceDAOImplTest {
             ResultSet resultSet = mock(ResultSet.class);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             prepareResultSet(resultSet);
-            Invoice resultInvoice  = invoiceDAO.findInvoiceByDestinationCity("SUMY", "ODESSA").orElse(null);
+            List<Invoice> resultInvoice  = invoiceDAO.findInvoiceByDestinationCity("SUMY", "ODESSA");
             assertNotNull(resultInvoice);
-            assertEquals(getTestInvoice(), resultInvoice);
-            assertEquals(getTestInvoice().toString(), resultInvoice.toString());
+            assertEquals(invoiceList, resultInvoice);
+
         }
     }
 
@@ -88,67 +96,6 @@ class InvoiceDAOImplTest {
             });
         }
     }
-
-//    @Test
-//    void testFindAllOrderInfoFromInvoiceByUserId() throws SQLException, DAOException {
-//        ConnectionPool connectionPool = mock(ConnectionPool.class);
-//        InvoiceDAO invoiceDAO = new InvoiceDAOImpl(connectionPool);
-//        try (PreparedStatement preparedStatement = prepareMocks(connectionPool)) {
-//            ResultSet resultSet = mock(ResultSet.class);
-//            when(preparedStatement.executeQuery()).thenReturn(resultSet);
-//            prepareResultSet(resultSet);
-//
-//            Invoice resultInvoice = invoiceDAO.findAllOrderInfoFromInvoiceByUserId(1L).orElse(null);
-//            assertNotNull(resultInvoice);
-//            assertEquals(getTestInvoice(), resultInvoice);
-//
-//            User resultUser = resultInvoice.getUser();
-//            Order resultOrder = resultInvoice.getOrder();
-//            Delivery resultDelivery = resultInvoice.getDelivery();
-//            AddressFirst resultAddressFirst = resultInvoice.getAddressFirst();
-//            AddressSecond resultAddressSecond = resultInvoice.getAddressSecond();
-//
-//            assertEquals(getTestInvoice().getDeliveryPrice(), resultInvoice.getDeliveryPrice());
-//            assertEquals(getTestInvoice().getTotalPrice(), resultInvoice.getTotalPrice());
-//            assertEquals(getTestInvoice().getIsDeliveryPaid(), resultInvoice.getIsDeliveryPaid());
-//            assertEquals(getTestInvoice().getOrderStatus(), resultInvoice.getOrderStatus());
-//            assertEquals(getTestDelivery().getDeliveryId(), resultDelivery.getDeliveryId());
-//            assertEquals(getTestUser().getUserId(), resultUser.getUserId());
-//            assertEquals(getTestOrder().getOrderId(), resultOrder.getOrderId());
-//            assertEquals(getTestAddressFirst().getFirstAddressId(), resultAddressFirst.getFirstAddressId());
-//            assertEquals(getTestAddressSecond().getSecondAddressId(), resultAddressSecond.getSecondAddressId());
-//
-//        }
-//    }
-
-    @Test
-    void changeInvoiceDeliveryDateAndOrderStatus() {
-    }
-
-    @Test
-    void findNumberOfRowsInInvoiceTable() {
-    }
-
-//    @Test
-//    void testFindNumberOfRowsInInvoiceTableByUserId() throws SQLException {
-//        ConnectionPool connectionPool = mock(ConnectionPool.class);
-//        InvoiceDAO invoiceDAO = new InvoiceDAOImpl(connectionPool);
-//        try (PreparedStatement ignored = prepareMocks(connectionPool)) {
-//            assertTrue(() -> {
-//                try {
-//                   invoiceDAO.findNumberOfRowsInInvoiceTableByUserId(1L);
-//                } catch (DAOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            });
-//        }
-//    }
-
-
-    @Test
-    void createInvoice() {
-    }
-
 
     private PreparedStatement prepareMocks(ConnectionPool connectionPool) throws SQLException {
         Connection connection = mock(Connection.class);

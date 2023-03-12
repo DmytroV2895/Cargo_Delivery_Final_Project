@@ -1,14 +1,13 @@
 package com.varukha.webproject.model.service.impl;
 
-
-import com.varukha.webproject.entity.*;
-
+import com.varukha.webproject.model.entity.*;
 import java.math.BigDecimal;
+import java.util.List;
 
-import static com.varukha.webproject.entity.Invoice.OrderStatus.ON_THE_WAY;
-
+import static com.varukha.webproject.model.entity.Invoice.OrderStatus.ON_THE_WAY;
 
 public final class ServiceTestUtil {
+
 
     public static User getTestUser() {
         return new User.Builder()
@@ -17,7 +16,6 @@ public final class ServiceTestUtil {
                 .setSurname("Bondarenko")
                 .setEmail("victor@gmail.com")
                 .setPhone("+380668996655")
-//                .setRole(User.Role.USER)
                 .setPaymentAccount(BigDecimal.valueOf(0))
                 .build();
     }
@@ -35,8 +33,6 @@ public final class ServiceTestUtil {
                 .setOrderWidth(45)
                 .setOrderVolume(1025.1)
                 .setOrderVolumeWeight(50)
-//               .setUserId(getTestUser())
-//               .setDeliveryId(getTestDelivery())
                 .build();
     }
     public static Delivery getTestDelivery() {

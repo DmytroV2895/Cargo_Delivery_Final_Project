@@ -1,11 +1,9 @@
 package com.varukha.webproject.model.dao.impl;
 
-
-import com.varukha.webproject.entity.*;
-
+import com.varukha.webproject.model.entity.*;
 import java.math.BigDecimal;
 
-import static com.varukha.webproject.entity.Invoice.OrderStatus.ON_THE_WAY;
+import static com.varukha.webproject.model.entity.Invoice.OrderStatus.ON_THE_WAY;
 
 
 public final class DAOTestUtil {
@@ -17,7 +15,6 @@ public final class DAOTestUtil {
                 .setSurname("Bondarenko")
                 .setEmail("victor@gmail.com")
                 .setPhone("+380668996655")
-//                .setRole(User.Role.USER)
                 .setPaymentAccount(BigDecimal.valueOf(0))
                 .build();
     }
@@ -35,8 +32,6 @@ public final class DAOTestUtil {
                 .setOrderWidth(45)
                 .setOrderVolume(1025.1)
                 .setOrderVolumeWeight(50)
-//               .setUserId(getTestUser())
-//               .setDeliveryId(getTestDelivery())
                 .build();
     }
     public static Delivery getTestDelivery() {
@@ -73,7 +68,6 @@ public final class DAOTestUtil {
     public static Invoice getTestInvoice() {
         return new Invoice.Builder()
                 .setInvoiceId(1L)
-//                .setDeliveryDate(Date.valueOf("2023.10.12"))
                 .setDeliveryPrice(BigDecimal.valueOf(600))
                 .setTotalPrice(BigDecimal.valueOf(1500))
                 .setDeliveryPaymentStatus(true)

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import static com.varukha.webproject.util.Encoder.encodePassword;
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class PasswordEncoderTest {
     private static final String password = "Qwer12345";
 

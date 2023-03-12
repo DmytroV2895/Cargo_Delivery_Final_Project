@@ -1,9 +1,9 @@
 package com.varukha.webproject.model.dao.impl;
 
-import com.varukha.webproject.entity.*;
-import com.varukha.webproject.entity.Order.Type;
-import com.varukha.webproject.entity.Delivery.DeliveryType;
-import com.varukha.webproject.entity.Invoice.OrderStatus;
+import com.varukha.webproject.model.entity.*;
+import com.varukha.webproject.model.entity.Order.Type;
+import com.varukha.webproject.model.entity.Delivery.DeliveryType;
+import com.varukha.webproject.model.entity.Invoice.OrderStatus;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
 import com.varukha.webproject.model.dao.InvoiceDAO;
@@ -20,9 +20,10 @@ import java.util.Optional;
 import static com.varukha.webproject.model.dao.ColumnName.*;
 
 /**
- * Class InvoiceDAO
- * Class contain a data access object methods in order to interaction with MySQL database
+ * Class InvoiceDAO implements methods for interaction with MySQL database
+ *
  * @author Dmytro Varukha
+ * @version 1.0
  */
 
 public class InvoiceDAOImpl implements InvoiceDAO {
@@ -34,7 +35,8 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method addInvoice used for adding new invoice to database.
+     * Method addInvoice used to adding new invoice to database.
+     *
      * @param invoice contain a set of data that will be added to database.
      * @return boolean result of operation. Return true if new invoice was added and false if not.
      * @throws DAOException is wrapper for SQLException.
@@ -70,9 +72,10 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method updateInvoiceData used for updating invoice data.
-     * @param data contain a set of data to change invoice.
-     * @return boolean result of operation. Return true if update is successful and false if not.
+     * Method updateInvoiceData used to updating invoice data.
+     *
+     * @param data contain a set of data to change is performed.
+     * @return boolean result of operation. Return true if update was successful and false if was not.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
@@ -84,6 +87,7 @@ public class InvoiceDAOImpl implements InvoiceDAO {
              PreparedStatement st = connection.prepareStatement(SQL_Queries.UPDATE_INVOICE_DATA)) {
             st.setBigDecimal(++k, data.getDeliveryPrice());
             st.setBigDecimal(++k, data.getTotalPrice());
+            st.setLong(++k, data.getInvoiceId());
             int rowCount = st.executeUpdate();
             if (rowCount != 0) {
                 isAdded = true;
@@ -99,15 +103,16 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method findInvoiceById used for find invoice by invoice id.
+     * Method findInvoiceById used to find invoice by invoice id.
+     *
      * @param invoiceId invoice id in which the search is performed.
      * @return optional result of operation. Return optional of invoice if available and return empty if not.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
     public Optional<Invoice> findInvoiceById(long invoiceId) throws DAOException {
-        Optional<Invoice> invoiceById;
         logger.log(Level.INFO, "Find invoice by Id: " + invoiceId);
+        Optional<Invoice> invoiceById;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.FIND_INVOICE_BY_ID)) {
             st.setLong(1, invoiceId);
@@ -122,22 +127,23 @@ public class InvoiceDAOImpl implements InvoiceDAO {
             }
         } catch (SQLException e) {
             logger.log(Level.ERROR, "SQLException " + e.getMessage() + "-" + e.getErrorCode());
-            throw new DAOException("DAO exception in findAllInvoices method. InvoiceId: " + invoiceId +
+            throw new DAOException("DAO exception in findInvoiceById method. InvoiceId: " + invoiceId +
                     " error code: " + e.getErrorCode(), e);
         }
         return invoiceById;
     }
 
     /**
-     * Method findInvoiceByDeliveryDate used for find all invoices by delivery date.
+     * Method findInvoiceByDeliveryDate used to find all invoices by delivery date.
+     *
      * @param deliveryDate date in which the search is performed.
      * @return optional result of operation. Return optional of invoices if available and return empty if not.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
     public Optional<Invoice> findInvoicesByDeliveryDate(String deliveryDate) throws DAOException {
-        Optional<Invoice> invoiceByDeliveryDate = Optional.empty();
         logger.log(Level.INFO, "Find invoice by delivery date: " + deliveryDate);
+        Optional<Invoice> invoiceByDeliveryDate = Optional.empty();
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.FIND_INVOICE_DELIVERY_DATE)) {
             st.setString(1, deliveryDate);
@@ -155,17 +161,17 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method findInvoiceByDestinationCity used for find all invoice by sender city and recipient city.
-     * @param firstCity city in which the search is performed.
-     * @param secondCity city in which the search is performed.
-     * @return optional result of operation. Return optional of invoices if available by searching first city and second city
-     * and return empty if not.
+     * Method findInvoiceByDestinationCity used to find all invoice by sender city and recipient city.
+     *
+     * @param firstCity  sender citi city in which the search is performed.
+     * @param secondCity receiver city in which the search will perform.
+     * @return list of invoices by searching first city and second city.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public Optional<Invoice> findInvoiceByDestinationCity(String firstCity, String secondCity) throws DAOException {
-        Optional<Invoice> invoiceByDestination = Optional.empty();
+    public List<Invoice> findInvoiceByDestinationCity(String firstCity, String secondCity) throws DAOException {
         logger.log(Level.INFO, "Find invoice by destination. First city: " + firstCity + " Second city: " + secondCity);
+        List<Invoice> invoiceByDestination = new ArrayList<>();
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.FIND_INVOICE_BY_DESTINATION)) {
             st.setString(1, firstCity);
@@ -173,30 +179,32 @@ public class InvoiceDAOImpl implements InvoiceDAO {
             st.setString(3, secondCity);
             st.setString(4, firstCity);
             ResultSet resultSet = st.executeQuery();
-            while (resultSet.next()) {
-                Invoice invoice = createInvoice(resultSet);
-                invoiceByDestination = Optional.of(invoice);
-            }
+                while (resultSet.next()) {
+                    invoiceByDestination.add(createInvoice(resultSet));
+                }
         } catch (SQLException e) {
             logger.log(Level.ERROR, "SQLException " + e.getMessage() + "-" + e.getErrorCode());
-            throw new DAOException("DAO exception in findInvoiceByDestinationDate method. First city: " + firstCity +
+            throw new DAOException("DAO exception in findInvoiceByDestinationCity method. First city: " + firstCity +
                     " Second city: " + secondCity + " error code: " + e.getErrorCode(), e);
         }
         return invoiceByDestination;
     }
 
     /**
-     * Method updateDeliveryPaymentStatusByInvoiceId used for update delivery payment status by invoice id.
-     * @param invoiceId invoice id in which the search is performed.
+     * Method updateDeliveryPaymentStatusByInvoiceId used to update delivery payment status by invoice id.
+     *
+     * @param invoiceId invoice id in which update is performed.
      * @return boolean result of operation of updating delivery payment status.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
     public boolean updateDeliveryPaymentStatusByInvoiceId(long invoiceId) throws DAOException {
+        logger.log(Level.INFO, "Update delivery payment status by invoiceId: " + invoiceId);
         boolean isUpdated = false;
+        int k = 0;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.UPDATE_DELIVERY_PAYMENT_STATUS)) {
-            st.setLong(1, invoiceId);
+            st.setLong(++k, invoiceId);
             int rowCount = st.executeUpdate();
             if (rowCount != 0) {
                 isUpdated = true;
@@ -212,42 +220,45 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method findNumberOfRowsInInvoiceTable used for find number of rows in invoice table.
-     * @param invoice contain a set of information about existed invoice to change delivery date and order status.
-     * @return boolean result of operation of changing delivery date and order status.
+     * Method updateInvoiceDeliveryDateAndOrderStatus used to update delivery date and order status in invoice table.
+     *
+     * @param invoice contain a set of information about invoice that used to updating delivery date and order status.
+     * @return boolean result of operation of updating delivery date and order status.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public boolean changeInvoiceDeliveryDateAndOrderStatus(Invoice invoice) throws DAOException {
+    public boolean updateInvoiceDeliveryDateAndOrderStatus(Invoice invoice) throws DAOException {
         logger.log(Level.INFO, "Change invoice delivery data and order status by manager " + invoice);
         boolean isChanged = false;
+        int k = 0;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.CHANGE_INVOICE_MANAGER)) {
-            st.setDate(1, invoice.getDeliveryDate());
-            st.setString(2, String.valueOf(invoice.getOrderStatus()));
-            st.setLong(3, invoice.getInvoiceId());
+            st.setDate(++k, invoice.getDeliveryDate());
+            st.setString(++k, String.valueOf(invoice.getOrderStatus()));
+            st.setLong(++k, invoice.getInvoiceId());
             int rowCount = st.executeUpdate();
             if (rowCount != 0) {
                 isChanged = true;
-                logger.log(Level.INFO, "Invoice data were changed successfully: " + invoice);
+                logger.log(Level.INFO, "Invoice data was changed successfully: " + invoice);
             } else {
-                logger.log(Level.ERROR, "Invoice data were not changed");
+                logger.log(Level.ERROR, "Invoice data was not changed");
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQL exception in changeInvoice method " + e.getMessage() + "-" + e.getErrorCode());
-            throw new DAOException("DAO exception in changeInvoice method during data changing process:" + invoice, e);
+            logger.log(Level.ERROR, "SQL exception in updateInvoiceDeliveryDateAndOrderStatus method " + e.getMessage() + "-" + e.getErrorCode());
+            throw new DAOException("DAO exception in updateInvoiceDeliveryDateAndOrderStatus method during data changing process:" + invoice, e);
         }
         return isChanged;
     }
 
     /**
-     * Method findNumberOfRowsInInvoiceTable used for find number of rows in invoice table.
-     * @return number of rows in invoice table.
+     * Method findNumberOfRecordsInInvoiceTable used to find number of records in invoice table.
+     *
+     * @return number of records in invoice table.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public int findNumberOfRowsInInvoiceTable() throws DAOException {
-        logger.log(Level.INFO, "Find number of rows in the database invoice table");
+    public int findNumberOfRecordsInInvoiceTable() throws DAOException {
+        logger.log(Level.INFO, "Find number of records in the database invoice table");
         int numberOfRows = 0;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_Queries.COUNT_ALL_INVOICES)) {
@@ -256,68 +267,73 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                 numberOfRows = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findNumberOfRowsInInvoiceTable: " + e.getMessage() + " - " + e.getErrorCode());
-            throw new DAOException("DAO exception in findNumberOfRowsInInvoiceTable method ", e);
+            logger.log(Level.ERROR, "SQLException in findNumberOfRecordsInInvoiceTable: " + e.getMessage() + " - " + e.getErrorCode());
+            throw new DAOException("DAO exception in findNumberOfRecordsInInvoiceTable method ", e);
         }
         return numberOfRows;
     }
 
     /**
-     * Method findNumberOfRowsInInvoiceTableByUserId used for find number of rows in invoice table by user id.
+     * Method findNumberOfRecordsInInvoiceTableByUserId used to find number of records in invoice table by user id.
+     *
      * @param userId user id in which the search is performed.
      * @return number of rows in invoice table by user id.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public int findNumberOfRowsInInvoiceTableByUserId(long userId) throws DAOException {
-        logger.log(Level.INFO, "Find number of rows in the database invoice table by userId");
+    public int findNumberOfRecordsInInvoiceTableByUserId(long userId) throws DAOException {
+        logger.log(Level.INFO, "Find number of records in the database invoice table by userId");
         int numberOfRows = 0;
+        int k = 0;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.COUNT_ALL_INVOICES_BY_USER_ID)) {
-            st.setLong(1, userId);
+            st.setLong(++k, userId);
             ResultSet resultSet = st.executeQuery();
             if (resultSet.next()) {
                 numberOfRows = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findNumberOfRowsInInvoiceTableByUserId: " + e.getMessage() + " - " + e.getErrorCode());
-            throw new DAOException("DAO exception in findNumberOfRowsInInvoiceTableByUserId method ", e);
+            logger.log(Level.ERROR, "SQLException in findNumberOfRecordsInInvoiceTableByUserId: " + e.getMessage() + " - " + e.getErrorCode());
+            throw new DAOException("DAO exception in findNumberOfRecordsInInvoiceTableByUserId method ", e);
         }
         return numberOfRows;
     }
 
     /**
-     * Method findAllInvoicesFromRow used for find all invoices with orders' information.
+     * Method findAllInvoicesByDeliveryDate used to find all invoices with orders' information order by delivery date.
+     *
      * @param numberOfDataOnPage the number of displayed records.
-     * @param fromRow the number rows in invoice table.
+     * @param dataFromRow        the number rows in invoice table.
      * @return list of all invoice from database.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public List<Invoice> findAllInvoicesFromRow(int fromRow, int numberOfDataOnPage) throws DAOException {
-        logger.log(Level.INFO, "Find all invoices from row");
+    public List<Invoice> findAllInvoicesByDeliveryDate(int dataFromRow, int numberOfDataOnPage) throws DAOException {
+        logger.log(Level.INFO, "Find all invoices from database order by delivery date");
+        int k = 0;
         List<Invoice> invoices = new ArrayList<>();
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.FIND_INVOICES_FROM_ROW)) {
-            st.setInt(1, fromRow);
-            st.setInt(2, numberOfDataOnPage);
+            st.setInt(++k, dataFromRow);
+            st.setInt(++k, numberOfDataOnPage);
             ResultSet resultSet = st.executeQuery();
             while (resultSet.next()) {
                 Invoice order = createInvoice(resultSet);
                 invoices.add(order);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findOrdersFromRow: " + e.getMessage() + " : " + e.getErrorCode());
-            throw new DAOException("DAO exception in findOrdersFromRow method ", e);
+            logger.log(Level.ERROR, "SQLException in findAllInvoicesByDeliveryDate: " + e.getMessage() + " : " + e.getErrorCode());
+            throw new DAOException("DAO exception in findAllInvoicesByDeliveryDate method ", e);
         }
         return invoices;
     }
 
     /**
-     * Method findAllOrdersInfoFromInvoiceByUserIdFromRow used for find all orders information from invoice by user id.
-     * @param userId user id in which the search is performed.
+     * Method findAllOrdersInfoFromInvoiceByUserIdFromRow used to find all orders information from invoice by user id.
+     *
+     * @param userId             user id in which the search is performed.
      * @param numberOfDataOnPage the number of displayed records.
-     * @param fromRow the number rows in invoice table.
+     * @param fromRow            the number rows in invoice table.
      * @return list of all orders information from invoice by user id from database.
      * @throws DAOException is wrapper for SQLException.
      */
@@ -337,24 +353,25 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                 invoiceList.add(invoice);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findAllOrdersInfoFromInvoiceByUserIdFromRow method:  " + e.getMessage() + " - " + e.getErrorCode());
-            throw new DAOException("DAO exception in method findAllOrdersInfoFromInvoiceByUserIdFromRow. User id: " + userId + " error code: ", e);
+            logger.log(Level.ERROR, "SQLException in findAllOrdersInfoFromInvoiceByUserId method:  " + e.getMessage() + " - " + e.getErrorCode());
+            throw new DAOException("DAO exception in method findAllOrdersInfoFromInvoiceByUserId. User id: " + userId + " error code: ", e);
         }
         return invoiceList;
     }
 
     /**
-     * Method findAllOrdersInfoFromInvoiceByDeliveryAddressFromRow used for find all orders information from invoice by delivery address.
-     * @param userId user id in which the search is performed.
-     * @param deliveryCity the city in which the search is performed.
+     * Method findAllOrdersInfoFromInvoiceByDeliveryCity used to find all orders information from invoice by delivery address.
+     *
+     * @param userId             user id in which the search is performed.
+     * @param deliveryCity       the city in which the search is performed.
      * @param numberOfDataOnPage the number of displayed records.
-     * @param fromRow the number rows in invoice table.
+     * @param fromRow            the number rows in invoice table.
      * @return list of all orders information from invoice by delivery city from database.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public List<Invoice> findAllOrdersInfoFromInvoiceByDeliveryAddress(long userId, String deliveryCity, int numberOfDataOnPage, int fromRow) throws DAOException {
-        logger.log(Level.INFO, "Find all order info from invoice by userId : " + userId);
+    public List<Invoice> findAllOrdersInfoFromInvoiceByDeliveryCity(long userId, String deliveryCity, int numberOfDataOnPage, int fromRow) throws DAOException {
+        logger.log(Level.INFO, "Find all order info from invoice by delivery city : " + deliveryCity);
         List<Invoice> invoiceList = new ArrayList<>();
         int k = 0;
         try (Connection connection = connectionPool.getConnection();
@@ -369,21 +386,23 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                 invoiceList.add(invoice);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findAllOrdersInfoFromInvoiceByDeliveryAddressFromRow method:  " + e.getMessage() + " - " + e.getErrorCode());
-            throw new DAOException("DAO exception in method findAllOrdersInfoFromInvoiceByDeliveryAddressFromRow. User id: " + userId + " error code: ", e);
+            logger.log(Level.ERROR, "SQLException in findAllOrdersInfoFromInvoiceByDeliveryCity method:  " + e.getMessage() + " - " + e.getErrorCode());
+            throw new DAOException("DAO exception in method findAllOrdersInfoFromInvoiceByDeliveryCity. User id: " + userId + " error code: ", e);
         }
         return invoiceList;
     }
 
     /**
-     * Method findNumberOfRowsInInvoiceTableByDeliveryAddress used for find number of rows in invoice table by delivery city.
+     * Method findNumberOfRecordsInInvoiceTableByDeliveryCity used to find number of records in invoice table by delivery city.
+     *
+     * @param userId       user id in which the search is performed.
      * @param deliveryCity delivery city in which the search is performed.
      * @return number of rows in invoice table by delivery city.
      * @throws DAOException is wrapper for SQLException.
      */
     @Override
-    public int findNumberOfRowsInInvoiceTableByDeliveryAddress(long userId, String deliveryCity) throws DAOException {
-        logger.log(Level.INFO, "Find number of rows in the database invoice table by delivery city");
+    public int findNumberOfRecordsInInvoiceTableByDeliveryCity(long userId, String deliveryCity) throws DAOException {
+        logger.log(Level.INFO, "Find number of records in the database invoice table by delivery city");
         int numberOfRows = 0;
         try (Connection connection = connectionPool.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_Queries.COUNT_ALL_INVOICES_BY_DELIVERY_CITY)) {
@@ -394,19 +413,20 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                 numberOfRows = resultSet.getInt(1);
             }
         } catch (SQLException e) {
-            logger.log(Level.ERROR, "SQLException in findNumberOfRowsInInvoiceTableByDeliveryAddress: " + e.getMessage() + " - " + e.getErrorCode());
-            throw new DAOException("DAO exception in findNumberOfRowsInInvoiceTableByDeliveryAddress method ", e);
+            logger.log(Level.ERROR, "SQLException in findNumberOfRecordsInInvoiceTableByDeliveryCity: " + e.getMessage() + " - " + e.getErrorCode());
+            throw new DAOException("DAO exception in findNumberOfRecordsInInvoiceTableByDeliveryCity method ", e);
         }
         return numberOfRows;
     }
 
     /**
-     * Method createUser used for create set of data about sender person.
+     * Method createUser used to create set of data about sender person.
+     *
      * @param resultSet contain a set of information about sender person.
      * @return existed user information  from database.
      * @throws SQLException is an exception that provides information on a database access error or other errors.
      */
-    public User createUser(ResultSet resultSet) throws SQLException {
+    private User createUser(ResultSet resultSet) throws SQLException {
         logger.log(Level.INFO, "Creating new user");
         return new User.Builder()
                 .setUserId(resultSet.getLong(ID_USER))
@@ -419,7 +439,8 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method createOrder used for create set of data about created order.
+     * Method createOrder used to create set of data about created order.
+     *
      * @param resultSet contain a set of information about created order.
      * @return existed order information  from database.
      * @throws SQLException is an exception that provides information on a database access error or other errors.
@@ -442,7 +463,8 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method createDelivery used for create set of data about delivery.
+     * Method createDelivery used to create set of data about delivery.
+     *
      * @param resultSet contain a set of information about delivery.
      * @return existed delivery information from database.
      * @throws SQLException is an exception that provides information on a database access error or other errors.
@@ -460,7 +482,8 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method createAddressFirst used for create set of data about first address.
+     * Method createAddressFirst used to create set of data about first address.
+     *
      * @param resultSet contain a set of information about sender address.
      * @return existed sender address information from database.
      * @throws SQLException is an exception that provides information on a database access error or other errors.
@@ -477,7 +500,8 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method createAddressSecond used for create set of data about receiver address.
+     * Method createAddressSecond used to create set of data about receiver address.
+     *
      * @param resultSet contain a set of information about receiver address.
      * @return existed receiver address information from database.
      * @throws SQLException is an exception that provides information on a database access error or other errors.
@@ -494,10 +518,11 @@ public class InvoiceDAOImpl implements InvoiceDAO {
     }
 
     /**
-     * Method createInvoice used for create set of invoice data with all information about user order.
-     * @param resultSet data about user order.
-     * @return existed invoice information from database.
-     * @throws SQLException is wrapper for SQLException.
+     * Method createInvoice used to create set of invoice data with all information about user order.
+     *
+     * @param resultSet set of data about user order from database.
+     * @return invoice information from database.
+     * @throws SQLException is an exception that provides information on a database access error or other errors.
      */
     @Override
     public Invoice createInvoice(ResultSet resultSet) throws SQLException {
@@ -523,27 +548,3 @@ public class InvoiceDAOImpl implements InvoiceDAO {
                 .build();
     }
 }
-
-
-
-//@Override
-//    public Optional<Invoice> findInvoiceByRecipientPhone(String recipientPhone) throws DAOException {
-//        logger.log(Level.INFO, "Find invoice by recipient phone: " + recipientPhone);
-//        Optional<Invoice> optionalInvoice;
-//        try (Connection connection = connectionPool.getConnection();
-//             PreparedStatement statement = connection.prepareStatement(SQL_Queries.FIND_INVOICE_BY_RECIPIENT_PHONE)) {
-//            statement.setString(1, recipientPhone);
-//            ResultSet resultSet = statement.executeQuery();
-//            if (resultSet.next()) {
-//                Invoice invoice = createInvoice(resultSet);
-//                optionalInvoice = Optional.of(invoice);
-//            } else {
-//                logger.log(Level.INFO, "Was not find any invoice by id: " + recipientPhone);
-//                optionalInvoice = Optional.empty();
-//            }
-//        } catch (SQLException e) {
-//            logger.log(Level.ERROR, "SQLException in getInvoiceByRecipientPhone method:  " + e.getMessage() + " - " + e.getErrorCode());
-//            throw new DAOException("DAO exception in method getInvoiceByRecipientPhone. Order id: " + recipientPhone + " error code: ", e);
-//        }
-//        return optionalInvoice;
-//    }

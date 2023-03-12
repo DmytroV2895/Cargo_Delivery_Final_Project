@@ -3,7 +3,6 @@ package com.varukha.webproject.model.connection;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -16,12 +15,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Custom connection pool.Realization with blocking queue and queue for given away and ready to given away connections.
- * Singleton.
+ * Class ConnectionPool obtain realization of custom connection pool with blocking queue and
+ * queue for given away connections and ready to given away connections.
  * @author Dmytro Varukha
- *
+ * @version 1.0
  */
-
 public class ConnectionPool {
 
     private static final AtomicBoolean isCreated = new AtomicBoolean();
@@ -33,9 +31,13 @@ public class ConnectionPool {
     private static final int DEFAULT_POOL_SIZE = 8;
 
 
-
+    /**
+     * Method ConnectionPool used to create connection pool by specified
+     * connection pool size.
+     * In order to ensure secure access to connection is used proxy connection that
+     * takes the real connection as an attribute.
+     */
     private ConnectionPool() {
-
         freeConnection = new LinkedBlockingDeque<>(DEFAULT_POOL_SIZE);
         givenAwayConnections = new ArrayDeque<>(DEFAULT_POOL_SIZE);
         logger.log(Level.INFO, "Creating connection pool");
@@ -50,12 +52,16 @@ public class ConnectionPool {
             }
         }
         if (freeConnection.size() == 0) {
-            logger.log(Level.FATAL, "Connection pool were not created. Current pool size: " + freeConnection.size());
+            logger.log(Level.FATAL, "Connection pool was not created. Current pool size: " + freeConnection.size());
             throw new RuntimeException("connections pool don't created");
         }
         logger.log(Level.INFO, "Connection pool was created successfully");
     }
 
+    /**
+     * Method getInstance used to get an instance of connection that was created.
+     * @return the instance of connection.
+     */
     public static ConnectionPool getInstance() {
         if (!isCreated.get()) {
             locker.lock();
@@ -68,6 +74,13 @@ public class ConnectionPool {
         return instance;
     }
 
+    /**
+     * Method getConnection used to get connection from created connection pool.
+     * Using method take() provides thread safe if two connections will arrive and
+     * will not allow two streams to take the same connection. Also, if the connection
+     * pool will be empty it will be waited when connection will put.
+     * @return connection from connection pool.
+     */
     public Connection getConnection() {
         Connection connection = null;
         try {
@@ -80,6 +93,9 @@ public class ConnectionPool {
         return connection;
     }
 
+    /**
+     * Method releaseConnection used to release connection back to connection pool.
+     */
     public void releaseConnection(Connection connection) {
         if (connection instanceof ProxyConnection && givenAwayConnections.remove(connection)) {
             try {
@@ -91,6 +107,10 @@ public class ConnectionPool {
         }
     }
 
+    /**
+     * Method destroyPool used to destroy connection pool when web application is shutting down
+     * and unregister JDBC driver when the web application was stopped.
+     */
     public void destroyPool() {
         for (int i = 0; i < DEFAULT_POOL_SIZE; i++) {
             closeAnyConnection();
@@ -98,6 +118,9 @@ public class ConnectionPool {
         deregisterDrivers();
     }
 
+    /**
+     * Method closeAnyConnection used to close any connections.
+     */
     private void closeAnyConnection() {
         try {
             freeConnection.take().reallyClose();
@@ -108,6 +131,9 @@ public class ConnectionPool {
         }
     }
 
+    /**
+     * Method deregisterDrivers used to unregister JDBC driver when the web application was stopped.
+     */
     private void deregisterDrivers() {
         DriverManager.getDrivers().asIterator().forEachRemaining(driver -> {
             try {

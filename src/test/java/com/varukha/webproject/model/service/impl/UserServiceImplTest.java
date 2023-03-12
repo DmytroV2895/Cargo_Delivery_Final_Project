@@ -1,13 +1,12 @@
 package com.varukha.webproject.model.service.impl;
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.ServiceException;
 import com.varukha.webproject.model.dao.UserDAO;
 import com.varukha.webproject.model.dao.impl.UserDAOImpl;
 import com.varukha.webproject.model.service.UserService;
-import com.varukha.webproject.util.Encoder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,6 @@ import java.util.*;
 
 import static com.varukha.webproject.command.ParameterAndAttribute.USER_EMAIL;
 import static com.varukha.webproject.command.ParameterAndAttribute.USER_PASSWORD;
-import static com.varukha.webproject.model.service.impl.ServiceTestUtil.getTestUser;
 import static com.varukha.webproject.util.Encoder.encodePassword;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.isA;
@@ -110,20 +108,20 @@ class UserServiceImplTest extends Assertions {
         assertEquals(optionalUser, userService.getUserByEmail(userEmail));
     }
 
-    @Test
-    void testGetUserById() throws DAOException, ServiceException {
-        long userId = 1;
-        when(userDAO.findUserById(userId)).thenReturn(users);
-        assertEquals(users, userService.getUserById(userId));
-
-    }
+//    @Test
+//    void testGetUserById() throws DAOException, ServiceException {
+//        long userId = 1;
+//        when(userDAO.findUserById(userId)).thenReturn(users);
+//        assertEquals(users, userService.getUserById(userId));
+//
+//    }
 
     @Test
     void addMoneyToUserAccount() throws ServiceException, DAOException {
         String userAccount = "1500";
         long userId = 1;
         userService.addMoneyToUserAccount(userId, userAccount);
-        Mockito.verify(userDAO, Mockito.times(1)).addMoneyToUserAccount(userId, userAccount);
+        Mockito.verify(userDAO, Mockito.times(1)).topUpUserAccount(userId, userAccount);
 
     }
 

@@ -2,12 +2,9 @@ package com.varukha.webproject.command.impl.routs;
 
 import com.varukha.webproject.command.*;
 import com.varukha.webproject.controller.context.AppContext;
-import com.varukha.webproject.entity.Invoice;
+import com.varukha.webproject.model.entity.Invoice;
 import com.varukha.webproject.exception.ServiceException;
-import com.varukha.webproject.model.connection.ConnectionPool;
-import com.varukha.webproject.model.dao.impl.InvoiceDAOImpl;
 import com.varukha.webproject.model.service.InvoiceService;
-import com.varukha.webproject.model.service.impl.InvoiceServiceImpl;
 import com.varukha.webproject.util.Converter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,24 +12,28 @@ import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- *  Go to delivery service payment page command
+ * Class ToDeliveryServicePaymentPageCommand it is a command type that used to get definite
+ * invoice data by invoiceId and returns route to delivery service payment page if such information was found.
+ *
  * @author Dmytro Varukha
  * @version 1.0
- *
  */
-
 public class ToDeliveryServicePaymentPageCommand implements Command {
 
     private static final Logger logger = LogManager.getLogger();
     InvoiceService invoiceService = AppContext.getAppContext().getInvoiceService();
 
+    /**
+     * Method execute use as start point of executing ToDeliveryServicePaymentPageCommand.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
     @Override
     public Router execute(HttpServletRequest request, HttpServletResponse response) {
         logger.log(Level.INFO, "Execute ToDeliveryServicePaymentPageCommand");

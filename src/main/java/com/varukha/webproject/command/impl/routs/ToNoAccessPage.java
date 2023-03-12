@@ -11,17 +11,23 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 /**
- *  Go to no access page command when page access is denied
+ * Class ToNoAccessPage it is a command type that used to get
+ * route to access denied page if user does not have permission.
+ *
  * @author Dmytro Varukha
  * @version 1.0
- *
  */
-
 public class ToNoAccessPage implements Command {
     private static final Logger logger = LogManager.getLogger();
 
+    /**
+     * Method execute use as start point of executing ToNoAccessPage.
+     *
+     * @param request  {@link HttpServletRequest} request from view layer and send set necessary attributes.
+     * @param response {@link HttpServletResponse} response from application(server side) to user (view layer).
+     * @return route to the specified page.
+     */
     @Override
     public Router execute(HttpServletRequest request, HttpServletResponse response) {
         logger.log(Level.INFO, "Execute ToNoAccessPage");

@@ -10,19 +10,21 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 
+import static com.varukha.webproject.command.ParameterAndAttribute.COMMAND;
+
 /**
- * Controller for queries from client
+ * Class Controller used to process requests from client.
+ *
  * @author Dmytro Varukha
+ * @version 1.0
  */
-
-
 @WebServlet (name = "controller", urlPatterns = "/controller")
 public class Controller extends HttpServlet {
 
     protected static final Logger logger = LogManager.getLogger();
+    private static final CommandFactory COMMAND_FACTORY = CommandFactory.getCommandFactory();
 
     public void init() {
     }
@@ -42,8 +44,7 @@ public class Controller extends HttpServlet {
     private void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         logger.log(Level.INFO, "Start controller");
-        String commandFromPage = request.getParameter(ParameterAndAttribute.COMMAND);
-        Command command = CommandProvider.defineCommand(commandFromPage);
+        Command command = COMMAND_FACTORY.getCurrentCommand(request.getParameter(COMMAND));
         Router router = command.execute(request, response);
         switch (router.getType()) {
             case FORWARD -> {

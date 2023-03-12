@@ -53,8 +53,8 @@
         <br>
         <div class="row">
             <div class="col-md text-center">
-                <h6>EPAM Java Summer Program 2023 <br>
-                    &#169; Cargo Transportation</h6>
+                <h6>EPAM Java Summer Program 2022 <br>
+                    &#169; 2023 Cargo Transportation</h6>
             </div>
         </div>
         <br>

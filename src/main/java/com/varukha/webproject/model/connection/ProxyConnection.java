@@ -10,9 +10,8 @@ import java.util.concurrent.Executor;
  * ProxyConnection it is wrapper for Connection class,
  * using for control creating and closing connections.
  * @author Dmytro Varukha
- *
+ * @version 1.0
  */
-
 public class ProxyConnection implements Connection {
 
     private final Connection connection;

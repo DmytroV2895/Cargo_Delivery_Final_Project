@@ -1,8 +1,7 @@
 package com.varukha.webproject.model.dao.impl;
 
 
-import com.varukha.webproject.entity.Order;
-import com.varukha.webproject.entity.Order.*;
+import com.varukha.webproject.model.entity.Order;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
 import com.varukha.webproject.model.dao.OrderDAO;
@@ -11,16 +10,13 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.math.BigDecimal;
 import java.sql.*;
 
-import static com.varukha.webproject.model.dao.ColumnName.*;
-
 /**
- * Class OrderDAO
+ * Class OrderDAOImpl implements methods for interacting with the MySQL Database.
  * @author Dmytro Varukha
+ * @version 1.0
  */
-
 public class OrderDAOImpl implements OrderDAO {
     private final ConnectionPool connectionPool;
     private static final Logger logger = LogManager.getLogger();
@@ -28,37 +24,12 @@ public class OrderDAOImpl implements OrderDAO {
         this.connectionPool = connectionPool;
     }
 
-    @Override
-    public Order createOrder(ResultSet resultSet) throws SQLException {
-        logger.log(Level.INFO, "Creating new order");
-        long orderId = resultSet.getLong(ID_ORDER);
-        String name = resultSet.getString(ORDER_NAME);
-        Type orderType = Type.valueOf(resultSet.getString(ORDER_TYPE));
-        String orderDescription = resultSet.getString(ORDER_DESCRIPTION);
-        BigDecimal price = resultSet.getBigDecimal(ORDER_PRICE);
-        double weight = resultSet.getDouble(ORDER_WEIGHT);
-        double length = resultSet.getDouble(ORDER_LENGTH);
-        double height = resultSet.getDouble(ORDER_HEIGHT);
-        double width = resultSet.getDouble(ORDER_WIDTH);
-        double volume = resultSet.getDouble(ORDER_VOLUME);
-        double volumeWeight = resultSet.getDouble(ORDER_VOLUME_WEIGHT);
-        logger.log(Level.DEBUG, "orderId: " + orderId + " order name: " + name);
-        Order order = new Builder()
-                .setOrderId(orderId)
-                .setOrderName(name)
-                .setOrderType(orderType)
-                .setOrderDescription(orderDescription)
-                .setOrderPrice(price)
-                .setOrderWeight(weight)
-                .setOrderLength(length)
-                .setOrderHeight(height)
-                .setOrderWidth(width)
-                .setOrderVolume(volume)
-                .setOrderVolumeWeight(volumeWeight)
-                .build();
-        return order;
-    }
-
+    /**
+     * Method addOrder used to adding new order to database.
+     * @param order contain order data that will be added to database.
+     * @return id of order that was added.
+     * @throws DAOException is wrapper for SQLException.
+     */
     @Override
     public long addOrder(Order order) throws DAOException {
         logger.log(Level.INFO, "Trying to add new order to database: " + order);
@@ -76,8 +47,6 @@ public class OrderDAOImpl implements OrderDAO {
             st.setDouble(++k, order.getWidth());
             st.setDouble(++k, order.getVolume());
             st.setDouble(++k, order.getVolumeWeight());
-            st.setLong(++k, order.getUserId().getUserId());
-            st.setLong(++k, order.getDeliveryId().getDeliveryId());
             int countRow = st.executeUpdate();
             ResultSet resultSet = st.getGeneratedKeys();
             if (resultSet.next()) {
@@ -93,6 +62,12 @@ public class OrderDAOImpl implements OrderDAO {
         return orderId;
     }
 
+    /**
+     * Method updateOrderData used to updating order data.
+     * @param data contain a set of data to change order information.
+     * @return boolean result of operation. Return true if update was successful and false if was not.
+     * @throws DAOException is wrapper for SQLException.
+     */
     @Override
     public boolean updateOrderData(Order data) throws DAOException {
         logger.log(Level.INFO, "Change order data in db" + data);
@@ -110,7 +85,7 @@ public class OrderDAOImpl implements OrderDAO {
             st.setDouble(++k, data.getWidth());
             st.setDouble(++k, data.getVolume());
             st.setDouble(++k, data.getVolumeWeight());
-
+            st.setLong(++k, data.getOrderId());
             int rowCount = st.executeUpdate();
             if (rowCount != 0) {
                 isChanged = true;

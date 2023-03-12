@@ -2,9 +2,9 @@ package com.varukha.webproject.model.dao.impl;
 
 
 
-import com.varukha.webproject.entity.Delivery;
-import com.varukha.webproject.entity.Order;
-import com.varukha.webproject.entity.User;
+import com.varukha.webproject.model.entity.Delivery;
+import com.varukha.webproject.model.entity.Order;
+import com.varukha.webproject.model.entity.User;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
 import com.varukha.webproject.model.dao.OrderDAO;

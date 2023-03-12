@@ -3,8 +3,6 @@ package com.varukha.webproject.model.connection;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import javax.sql.DataSource;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +12,11 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Class ConnectionCreator that create a connection to database by using properties file
- * @author Dmytro Varukha
+ * Class ConnectionCreator used to create a connection to database by using properties
+ * file with necessary data in order to create the connection.
  *
+ * @author Dmytro Varukha
+ * @version 1.0
  */
 
 public class ConnectionCreator {
@@ -36,10 +36,11 @@ public class ConnectionCreator {
     private ConnectionCreator() {
     }
 
-
-
+    /**
+     * Static block that used to get connection data from properties file
+     * before run the web application.
+     */
     static {
-
         try (InputStream inputStream = ConnectionCreator.class.getClassLoader().getResourceAsStream(DATABASE_PROPERTIES)) {
             properties.load(inputStream);
             DATABASE_URL = properties.getProperty(PROPERTY_URL);
@@ -47,7 +48,6 @@ public class ConnectionCreator {
             DATABASE_PASSWORD = properties.getProperty(PROPERTY_PASSWORD);
             DATABASE_DRIVER = properties.getProperty(PROPERTY_DRIVER);
             Class.forName(DATABASE_DRIVER);
-
         } catch (FileNotFoundException e) {
             logger.log(Level.FATAL, "Throwing FileNotFoundException " + e.getMessage());
             throw new RuntimeException();
@@ -62,10 +62,12 @@ public class ConnectionCreator {
 
 
     /**
+     * Method getConnection used to create connection to database using database URL,
+     * name of database user, and password to database.
+     *
      * @return new connection to database
-     * @throws SQLException
+     * @throws SQLException is an exception that provides information on a database access error or other errors.
      */
-
     static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DATABASE_URL, DATABASE_USER, DATABASE_PASSWORD);
     }

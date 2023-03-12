@@ -1,17 +1,13 @@
 package com.varukha.webproject.model.dao.impl;
 
-import com.varukha.webproject.entity.AddressSecond;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.model.connection.ConnectionPool;
-import com.varukha.webproject.model.dao.AddressFirstDAO;
 import com.varukha.webproject.model.dao.AddressSecondDAO;
 import com.varukha.webproject.model.dao.SQL_Queries;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
 
-import static com.varukha.webproject.model.dao.impl.DAOTestUtil.getTestAddressFirst;
 import static com.varukha.webproject.model.dao.impl.DAOTestUtil.getTestAddressSecond;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.isA;

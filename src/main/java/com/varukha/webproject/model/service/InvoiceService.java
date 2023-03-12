@@ -1,139 +1,170 @@
 package com.varukha.webproject.model.service;
 
-import com.varukha.webproject.entity.Invoice;
+import com.varukha.webproject.model.entity.Invoice;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 
 /**
- * The interface InvoiceService
+ * Interface InvoiceService contain contracts of service methods for
+ * interacting between View layer and the MySQL Data Access layer
+ *
  * @author Dmytro Varukha
  * @version 1.0
  */
-
-
 public interface InvoiceService {
 
     /**
-     * Save new invoice to database
-     * @param invoiceData;
-     * @return boolean result of operation
-     * @throws ServiceException
+     * Method addInvoice is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to add new invoice using data access layer.
+     *
+     * @param invoiceData contain a set of data from user request that will be process in data access layer.
+     * @return boolean result of operation. Return true if new invoice data was set successfully and false if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
     boolean addInvoice(Map<String, String> invoiceData) throws ServiceException, IncorrectInputException;
 
     /**
-     * Update invoice data in database
-     * @param data to update current invoice information
-     * @return boolean result of operation
-     * @throws ServiceException
-     * @throws IncorrectInputException
+     * Method updateInvoice is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update invoice data.
+     *
+     * @param data contain a set of data to update from user request that will be process in data access layer.
+     * @return boolean result of operation. Return true if new invoice data was set successfully and false if not.
+     * @throws ServiceException        is wrapper for DAOException that throws exception during the runtime because of
+     *                                 data validation fail or others mistakes.
+     * @throws IncorrectInputException is an exception that throws during the runtime because of incorrect data input.
      */
     boolean updateInvoice(Map<String, String> data) throws ServiceException, IncorrectInputException;
 
-
-//    /**
-//     * Get invoice by recipient phone number
-//     * @param recipientPhone;
-//     * @return Optional<Invoice>
-//     * @throws ServiceException
-//     */
-//    Optional<Invoice> getInvoiceByRecipientPhone(String recipientPhone) throws ServiceException;
-
-
-
     /**
-     * @param orderId;
-
-     * @return boolean result of updating user account operation
-     * @throws ServiceException
-     */
-    boolean updateDeliveryPaymentStatusByInvoiceId(long orderId) throws ServiceException;
-
-
-    /**
-     * @param invoiceData;
-
-     * @return boolean result of updating delivery date and order delivery status
-     * @throws ServiceException
-     */
-    boolean updateInvoiceDeliveryDateAndOrderStatus(Map<String, String> invoiceData) throws ServiceException;
-
-
-
-    /**
-     * @param invoiceId
-     * @return List<Invoice>
-     * @throws ServiceException
+     * Method getInvoiceById is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get invoice data by invoice id.
+     *
+     * @param invoiceId invoice id in which the search is performed.
+     * @return optional result of operation. Return optional of invoice if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
     Optional<Invoice> getInvoiceById(long invoiceId) throws ServiceException;
 
-
     /**
-     * @param deliveryDate
-     * @return Optional<Invoice>
-     * @throws ServiceException
+     * Method getInvoiceByDeliveryDate is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get all invoices by delivery date.
+     *
+     * @param deliveryDate date in which the search is performed.
+     * @return optional result of operation. Return optional of invoices if available and return empty if not.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
     Optional<Invoice> getInvoiceByDeliveryDate(String deliveryDate) throws ServiceException;
 
-
     /**
-     * @param firstCity
-     * @param secondCity
-     * @return List<Invoice> selected by first city (sent from) and second city (receiver)
-     * @throws ServiceException
+     * Method getInvoiceByDestinationCity is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get all invoice by sender city and recipient city.
+     *
+     * @param firstCity  sender city in which the search is performed.
+     * @param secondCity receiver city in which the search is performed.
+     * @return list of invoices by searching first city and second city.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
-    Optional<Invoice> getInvoiceByDestinationCity(String firstCity, String secondCity) throws ServiceException;
-
+    List<Invoice> getInvoiceByDestinationCity(String firstCity, String secondCity) throws ServiceException;
 
     /**
-     * Get the number of rows of invoice table
-     * @return int number of rows from database invoice table
-     * @throws ServiceException
+     * Method updateDeliveryPaymentStatusByInvoiceId is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update delivery payment status by invoice id.
+     *
+     * @param invoiceId invoice id in which update is performed.
+     * @return boolean result of operation of updating delivery payment status.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
-    int getNumberOfPages() throws ServiceException;
+    boolean updateDeliveryPaymentStatusByInvoiceId(long invoiceId) throws ServiceException;
 
     /**
-     * Get the number of rows of invoice table by userId
-     * @param userId
-     * @return int number of rows from database invoice table
-     * @throws ServiceException
+     * Method updateInvoiceDeliveryDateAndOrderStatus is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to update delivery date and order status.
+     *
+     * @param invoiceData contain an information about delivery date and order status that used to updating.
+     * @return boolean result of operation of updating delivery date and order status.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
-    int getNumberOfRowsInInvoiceTableByUserId(long userId) throws ServiceException;
-
+    boolean updateInvoiceDeliveryDateAndOrderStatus(Map<String, String> invoiceData) throws ServiceException;
 
     /**
-     * Get list if invoices from row of invoice table according to page number
-     * @param pageNumber
-     * @return List of invoices from row
-     * @throws ServiceException
+     * Method getNumberOfRecordsInInvoiceTableByUserId is an intermediate service method for communication between
+     * the user view layer and the database and used to set necessary data in order to get number of records in invoice table by user id.
+     *
+     * @param userId user id in which the search is performed.
+     * @return number of records in invoice table by user id.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
-    List<Invoice> getInvoicesFromRow(int pageNumber) throws ServiceException;
-
-
+    int getNumberOfRecordsInInvoiceTableByUserId(long userId) throws ServiceException;
 
     /**
-     * Find all order info from invoice by userId
-     * @param userId;
-     * @param pageNumber;
-     * @return List of invoices from row by userId
-     * @throws ServiceException
+     * Method getNumberOfRecordsOfAllInvoices is an intermediate service method for communication between
+     * the user view layer and the database and used to get number of all records in invoice table for manager.
+     *
+     * @return number of all records in invoice table.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
+    int getNumberOfRecordsOfAllInvoices() throws ServiceException;
+
+    /**
+     * Method getInvoicesFromPagePagination is an intermediate service method for communication between
+     * the user view layer and the database and used get to definite records from invoice table
+     * and display of data after switching to a new page.
+     *
+     * @param pageNumber page number with displayed data.
+     * @return definite data from invoice table for specified page.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
+    List<Invoice> getInvoicesFromPagePagination(int pageNumber) throws ServiceException;
+
+    /**
+     * Method getAllOrdersInfoFromInvoiceByUserId is an intermediate service method for communication between
+     * the user view layer and the database and used to get all orders information from invoice by user id.
+     *
+     * @param userId     user id in which the search is performed.
+     * @param pageNumber page number with displayed data.
+     * @return list of all orders information from invoice by user id.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
     List<Invoice> getAllOrdersInfoFromInvoiceByUserId(long userId, int pageNumber) throws ServiceException;
 
+    /**
+     * Method getAllFilteredOrdersInfoFromInvoiceByDeliveryCity is an intermediate service method for communication between
+     * the user view layer and the database and used to get orders information from invoice that was filtered by delivery city.
+     *
+     * @param userId       user id in which the search is performed.
+     * @param deliveryCity delivery city in which the search is performed.
+     * @param pageNumber   page number with displayed data.
+     * @return list of orders information from invoice that was filtered by delivery city.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
+     */
+    List<Invoice> getAllFilteredOrdersInfoFromInvoiceByDeliveryCity(long userId, String deliveryCity, int pageNumber) throws ServiceException;
 
     /**
-     * Find all sorted order info from invoice by first address
-     * @param userId;
-     * @param pageNumber;
-     * @return Sorted list of invoices from row by first address
-     * @throws ServiceException
+     * Method getNumberOfRecordsInInvoiceTableByDeliveryCityPagination is an intermediate service method for communication between
+     * the user view layer and the database and used to get number of records in invoice table that was filtered by delivery city
+     * and display of data after switching to a new page.
+     *
+     * @param userId       user id in which the search is performed.
+     * @param deliveryCity delivery city in which the search is performed.
+     * @return number of all records in invoice table after filtering.
+     * @throws ServiceException is wrapper for DAOException that throws exception during the runtime because of
+     *                          data validation fail or others mistakes.
      */
-    List<Invoice> getAllSortedOrdersInfoFromInvoiceByDeliveryAddress(long userId, String deliveryCity, int pageNumber) throws ServiceException;
-
-
-    int getNumberOfRowsInInvoiceTableByDeliveryAddress(long deliveryAddressId, String deliveryCity) throws ServiceException;
+    int getNumberOfRecordsInInvoiceTableByDeliveryCityPagination(long userId, String deliveryCity) throws ServiceException;
 }

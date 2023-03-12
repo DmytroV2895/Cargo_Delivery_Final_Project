@@ -1,16 +1,13 @@
 package com.varukha.webproject.model.dao;
 
 /**
- * Column names in database
+ * Class Column obtain names of all attributes in database tables.
  * @author Dmytro Varukha
- *
  */
 public final class ColumnName {
 
 	//User
-
 	public static final String ID_USER = "id_user";
-	public static final String USER_ID = "user_id";
 	public static final String USER_NAME = "name";
 	public static final String USER_SURNAME = "surname";
 	public static final String USER_EMAIL = "email";
@@ -18,13 +15,11 @@ public final class ColumnName {
 	public static final String USER_PHONE = "phone";
 	public static final String USER_ROLE = "role";
 	public static final String USER_PAYMENT_ACCOUNT = "account";
-	public static final String USER_PROFILE_IS_ACTIVE = "isActive";
 
 
 	// Orders
 
 	public static final String ID_ORDER = "id_order";
-	public static final String ORDER_ID = "order_id";
 	public static final String ORDER_NAME = "order_name";
 	public static final String ORDER_TYPE = "order_type";
 	public static final String ORDER_DESCRIPTION = "order_description";

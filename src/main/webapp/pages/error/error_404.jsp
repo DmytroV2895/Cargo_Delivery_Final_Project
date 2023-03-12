@@ -1,12 +1,8 @@
-
-
-<%@ page isErrorPage="true" contentType="text/html; charset=UTF-8"
-         pageEncoding="UTF-8" language="java"%>
+<%@ page isErrorPage="true" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" language="java"%>
 
 
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 
 <head>
     <meta charset="UTF-8" />

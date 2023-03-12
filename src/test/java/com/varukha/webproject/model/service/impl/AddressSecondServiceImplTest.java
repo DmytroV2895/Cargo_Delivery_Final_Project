@@ -1,8 +1,7 @@
 package com.varukha.webproject.model.service.impl;
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.AddressFirst;
-import com.varukha.webproject.entity.AddressSecond;
+import com.varukha.webproject.model.entity.AddressSecond;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
@@ -14,7 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.Map;
-import static com.varukha.webproject.command.ParameterAndAttribute.USER_ID;
+
+import static com.varukha.webproject.command.ParameterAndAttribute.SECOND_ADDRESS_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
@@ -40,7 +40,7 @@ class AddressSecondServiceImplTest {
         addressSecondData.put(ParameterAndAttribute.SECOND_STREET_NAME, "Lisna");
         addressSecondData.put(ParameterAndAttribute.SECOND_STREET_NUMBER, "35");
         addressSecondData.put(ParameterAndAttribute.SECOND_HOUSE_NUMBER, "85");
-        addressSecondData.put(USER_ID, "1");
+        addressSecondData.put(SECOND_ADDRESS_ID, "1");
 
         addressSecond = new AddressSecond.Builder()
                 .setSecondCity("CHARKIV")
@@ -52,7 +52,7 @@ class AddressSecondServiceImplTest {
     }
 
     @Test
-    void addAddressSecond() throws DAOException, ServiceException, IncorrectInputException {
+    void testAddAddressSecond() throws DAOException, ServiceException, IncorrectInputException {
         addressSecondService.addAddressSecond(addressSecondData);
         Mockito.verify(addressSecondDAO, Mockito.times(1)).addSecondAddress(addressSecond);
     }

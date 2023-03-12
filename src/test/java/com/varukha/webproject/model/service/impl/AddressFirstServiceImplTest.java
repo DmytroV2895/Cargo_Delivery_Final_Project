@@ -1,8 +1,7 @@
 package com.varukha.webproject.model.service.impl;
 
 import com.varukha.webproject.command.ParameterAndAttribute;
-import com.varukha.webproject.entity.AddressFirst;
-import com.varukha.webproject.entity.Order;
+import com.varukha.webproject.model.entity.AddressFirst;
 import com.varukha.webproject.exception.DAOException;
 import com.varukha.webproject.exception.IncorrectInputException;
 import com.varukha.webproject.exception.ServiceException;
@@ -41,6 +40,7 @@ class AddressFirstServiceImplTest {
         addressFirstData.put(ParameterAndAttribute.FIRST_STREET_NAME, "Mira");
         addressFirstData.put(ParameterAndAttribute.FIRST_STREET_NUMBER, "25");
         addressFirstData.put(ParameterAndAttribute.FIRST_HOUSE_NUMBER, "56");
+        addressFirstData.put(ParameterAndAttribute.FIRST_ADDRESS_ID, "1");
 
         addressFirst = new AddressFirst.Builder()
                 .setFirstCity("SUMY")
